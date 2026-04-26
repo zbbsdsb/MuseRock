@@ -33,7 +33,7 @@ export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [state, setState] = useState<MuseRockState>(() => {
     const saved = localStorage.getItem('muserock_state');
-    const initial: MuseRockState = saved ? JSON.parse(saved) : {
+    const defaults: MuseRockState = {
       apiProvider: 'gemini',
       apiKeys: {
         gemini: '',
@@ -47,7 +47,21 @@ export default function App() {
       history: [],
       title: 'Neon Cathedral'
     };
-    return initial;
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Migration: If user has old 'apiKey' field, move it to gemini
+        if (parsed.apiKey && !parsed.apiKeys) {
+          parsed.apiKeys = { ...defaults.apiKeys, gemini: parsed.apiKey };
+          delete parsed.apiKey;
+        }
+        return { ...defaults, ...parsed };
+      } catch (e) {
+        return defaults;
+      }
+    }
+    return defaults;
   });
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
@@ -68,7 +82,7 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('muserock_state', JSON.stringify(state));
-    const currentKey = state.apiKeys[state.apiProvider];
+    const currentKey = state.apiKeys?.[state.apiProvider];
     if (currentKey) {
       aiServiceRef.current = new AIService(state.apiProvider, currentKey);
     }
@@ -91,7 +105,7 @@ export default function App() {
   };
 
   const performAISearch = async () => {
-    const currentKey = state.apiKeys[state.apiProvider];
+    const currentKey = state.apiKeys?.[state.apiProvider];
     if (!currentKey) {
       toggleSettings();
       return;
@@ -111,7 +125,7 @@ export default function App() {
   };
 
   const getInspirationIdea = async (type: string) => {
-    const currentKey = state.apiKeys[state.apiProvider];
+    const currentKey = state.apiKeys?.[state.apiProvider];
     if (!currentKey) {
       toggleSettings();
       return;
