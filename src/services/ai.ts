@@ -21,9 +21,9 @@ export class AIService {
     if (this.provider === 'gemini' && this.geminiGenAI) {
       const response = await this.geminiGenAI.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Context: ${context}\n\nTask: Provide creative inspiration for a creator based on this context. Focus on ${type}. Keep it brief, evocative, and high-impact. Avoid clichés.`,
+        contents: `Context: ${context}\n\nTask: Provide creation assistance for a creator based on this context. Focus on ${type}. Keep it brief, evocative, and high-impact. Avoid clichés.`,
         config: {
-            systemInstruction: "You are MuseRock, an elite creative collaborator. You provide sharp, non-obvious insights and materials for creators.",
+            systemInstruction: "You are MuseRock, an elite creation assistant. You provide sharp, non-obvious insights and materials for creators across various disciplines.",
             temperature: 0.8
         }
       });
@@ -43,9 +43,9 @@ export class AIService {
     if (this.provider === 'gemini' && this.geminiGenAI) {
       const response = await this.geminiGenAI.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Search Query: ${query}\n\nTask: Act as a research assistant. Find 3-5 high-quality references, data points, or sources relevant to this query. Categorize them and explain why they are valuable for a creator.`,
+        contents: `Search Query: ${query}\n\nTask: Act as a creation assistant. Find 3-5 high-quality references, data points, or sources relevant to this query. Categorize them and explain why they are valuable for a creator.`,
         config: {
-            systemInstruction: "You are MuseRock Research. You find deep references (scientific, historical, artistic) that others miss.",
+            systemInstruction: "You are MuseRock Creation Assistant. You find deep references (scientific, historical, artistic) that others miss for creators across various disciplines.",
             temperature: 0.3
         }
       });

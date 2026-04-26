@@ -16,3 +16,5 @@ export interface MuseRockMessage {
   text: string;
   timestamp: number;
 }
+
+export * from './types/oasis';

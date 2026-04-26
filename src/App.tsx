@@ -23,14 +23,17 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { MuseRockState, MuseRockMessage, ApiProvider } from './types';
+import { MuseRockState, MuseRockMessage, ApiProvider, OasisUser } from './types';
 import { AIService } from './services/ai';
 import { auth, loginWithGoogle, db } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
+import { oasisAuthService } from './services/oasisAuth';
+import ContinueWithOasisButton from './components/ContinueWithOasisButton';
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [oasisUser, setOasisUser] = useState<OasisUser | null>(null);
   const [state, setState] = useState<MuseRockState>(() => {
     const saved = localStorage.getItem('muserock_state');
     const defaults: MuseRockState = {
@@ -68,6 +71,8 @@ export default function App() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isOasisLoading, setIsOasisLoading] = useState(false);
+  const [oasisError, setOasisError] = useState<string | null>(null);
   const aiServiceRef = useRef<AIService | null>(null);
 
   useEffect(() => {
@@ -78,6 +83,65 @@ export default function App() {
       }
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    // Handle OAuth callback
+    const handleOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      const state = urlParams.get('state');
+      const error = urlParams.get('error');
+
+      if (error) {
+        const errorDescription = urlParams.get('error_description');
+        setOasisError(errorDescription || 'Authorization failed');
+        // Clear URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
+      if (code && state) {
+        setIsOasisLoading(true);
+        setOasisError(null);
+        try {
+          // Validate state
+          if (!oasisAuthService.validateState(state)) {
+            throw new Error('Invalid state parameter');
+          }
+
+          // Exchange code for tokens
+          await oasisAuthService.exchangeCodeForTokens(code);
+          
+          // Get user info
+          const userInfo = await oasisAuthService.getUserInfo();
+          setOasisUser(userInfo);
+          
+          // Clear URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+        } catch (err) {
+          setOasisError(err instanceof Error ? err.message : 'Authentication failed');
+        } finally {
+          setIsOasisLoading(false);
+        }
+      }
+    };
+
+    // Check if user is already authenticated with Oasis
+    const checkOasisAuth = async () => {
+      if (oasisAuthService.isAuthenticated()) {
+        try {
+          const userInfo = await oasisAuthService.getUserInfo();
+          setOasisUser(userInfo);
+        } catch (err) {
+          // Token might be expired, clear it
+          oasisAuthService.clearTokens();
+        }
+      }
+    };
+
+    handleOAuthCallback();
+    checkOasisAuth();
   }, []);
 
   useEffect(() => {
@@ -102,6 +166,11 @@ export default function App() {
 
   const handleLogout = async () => {
     await signOut(auth);
+  };
+
+  const handleOasisLogout = () => {
+    oasisAuthService.clearTokens();
+    setOasisUser(null);
   };
 
   const performAISearch = async () => {
@@ -180,7 +249,7 @@ export default function App() {
           </div>
         </div>
         
-        <div className="space-y-6 flex flex-col items-center">
+        <div className="space-y-6 flex flex-col items-end">
            <button onClick={toggleSettings} className="p-1.5 hover:bg-brand-black/5 rounded-full transition-colors text-brand-black/40 hover:text-brand-black">
              <Settings size={20} />
            </button>
@@ -188,10 +257,28 @@ export default function App() {
              <button onClick={handleLogout} className="w-8 h-8 rounded-full bg-brand-border overflow-hidden border border-brand-black/10">
                {user.photoURL ? <img src={user.photoURL} referrerPolicy="no-referrer" /> : <User size={14} className="m-auto" />}
              </button>
-           ) : (
-             <button onClick={handleLogin} className="w-8 h-8 rounded-full bg-brand-paper border border-brand-border flex items-center justify-center hover:bg-brand-border transition-colors">
-               <ShieldCheck size={16} className="text-blue-500" />
+           ) : oasisUser ? (
+             <button onClick={handleOasisLogout} className="w-8 h-8 rounded-full bg-brand-border overflow-hidden border border-brand-black/10">
+               {oasisUser.avatar_url ? <img src={oasisUser.avatar_url} referrerPolicy="no-referrer" /> : <User size={14} className="m-auto" />}
              </button>
+           ) : (
+             <div className="flex flex-col items-end gap-2">
+               <button onClick={handleLogin} className="w-8 h-8 rounded-full bg-brand-paper border border-brand-border flex items-center justify-center hover:bg-brand-border transition-colors">
+                 <ShieldCheck size={16} className="text-blue-500" />
+               </button>
+               <ContinueWithOasisButton />
+             </div>
+           )}
+           {isOasisLoading && (
+             <div className="flex items-center gap-2 text-sm text-brand-black/60">
+               <Loader2 size={14} className="animate-spin" />
+               <span>Authenticating...</span>
+             </div>
+           )}
+           {oasisError && (
+             <div className="text-sm text-red-500 max-w-xs text-right">
+               {oasisError}
+             </div>
            )}
         </div>
       </nav>
@@ -284,7 +371,7 @@ export default function App() {
 
             <div className="flex-1 overflow-y-auto flex flex-col p-8 transparent-scrollbar">
               <div className="flex justify-between items-center mb-8">
-                <span className="text-[14px] font-serif italic text-brand-black/60">Creative Sourcing</span>
+                <span className="text-[14px] font-serif italic text-brand-black/60">Creation Assistance</span>
                 <span className="text-[10px] font-black uppercase tracking-widest underline cursor-pointer hover:text-brand-accent transition-colors" onClick={() => setAiResult(null)}>Clear</span>
               </div>
 
