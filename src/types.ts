@@ -1,9 +1,13 @@
+export type ApiProvider = 'gemini' | 'openai' | 'anthropic' | 'custom';
+
 export interface MuseRockState {
-  apiKey: string;
+  apiProvider: ApiProvider;
+  apiKeys: Record<ApiProvider, string>;
   isSettingsOpen: boolean;
   activeTab: 'write' | 'search' | 'inspiration';
   content: string;
   history: MuseRockMessage[];
+  title: string;
 }
 
 export interface MuseRockMessage {

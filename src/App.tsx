@@ -23,27 +23,34 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import { MuseRockState, MuseRockMessage } from './types';
+import { MuseRockState, MuseRockMessage, ApiProvider } from './types';
 import { AIService } from './services/ai';
 import { auth, loginWithGoogle, db } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
-import { doc, getDocFromServer, setDoc, serverTimestamp, collection, query, where, getDocs, onSnapshot } from 'firebase/firestore';
+import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [state, setState] = useState<MuseRockState>(() => {
     const saved = localStorage.getItem('muserock_state');
-    const initial = saved ? JSON.parse(saved) : {
-      apiKey: '',
+    const initial: MuseRockState = saved ? JSON.parse(saved) : {
+      apiProvider: 'gemini',
+      apiKeys: {
+        gemini: '',
+        openai: '',
+        anthropic: '',
+        custom: ''
+      },
       isSettingsOpen: false,
       activeTab: 'write',
       content: '',
-      history: []
+      history: [],
+      title: 'Neon Cathedral'
     };
     return initial;
   });
 
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,7 +60,6 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (currUser) => {
       setUser(currUser);
       if (currUser) {
-        // Test connection as per guidelines
         getDocFromServer(doc(db, 'test', 'connection')).catch(() => {});
       }
     });
@@ -62,8 +68,9 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('muserock_state', JSON.stringify(state));
-    if (state.apiKey) {
-      aiServiceRef.current = new AIService(state.apiKey);
+    const currentKey = state.apiKeys[state.apiProvider];
+    if (currentKey) {
+      aiServiceRef.current = new AIService(state.apiProvider, currentKey);
     }
   }, [state]);
 
@@ -84,7 +91,8 @@ export default function App() {
   };
 
   const performAISearch = async () => {
-    if (!state.apiKey) {
+    const currentKey = state.apiKeys[state.apiProvider];
+    if (!currentKey) {
       toggleSettings();
       return;
     }
@@ -103,7 +111,8 @@ export default function App() {
   };
 
   const getInspirationIdea = async (type: string) => {
-    if (!state.apiKey) {
+    const currentKey = state.apiKeys[state.apiProvider];
+    if (!currentKey) {
       toggleSettings();
       return;
     }
@@ -121,227 +130,189 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-[#F5F5F0] text-[#141414] font-sans overflow-hidden">
-      {/* ... (Sidebar same as before, truncated for brevity in replacement but I will include full content) ... */}
-      <motion.aside 
-        initial={false}
-        animate={{ width: isSidebarCollapsed ? 64 : 260 }}
-        className="relative bg-white border-r border-[#141414]/10 flex flex-col z-20"
-      >
-        <div className="p-4 border-bottom border-[#141414]/5 flex items-center justify-between">
-          {!isSidebarCollapsed && (
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }}
-              className="flex items-center gap-2"
-            >
-              <div className="w-8 h-8 bg-[#141414] rounded flex items-center justify-center">
-                <Sparkles size={18} className="text-white" />
-              </div>
-              <span className="font-bold tracking-tighter text-xl uppercase italic">MuseRock</span>
-            </motion.div>
-          )}
-          <button 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="p-1.5 hover:bg-[#141414]/5 rounded transition-colors"
-          >
-            {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </button>
+    <div className="flex h-screen bg-brand-offwhite text-brand-black font-sans overflow-hidden">
+      {/* --- MINIMAL RAIL (Editorial System Nav) --- */}
+      <nav className="w-16 border-r border-brand-border flex flex-col items-center py-10 justify-between bg-white z-30 shrink-0">
+        <div className="space-y-10 flex flex-col items-center">
+          {/* Logo "M" */}
+          <div className="w-10 h-10 bg-brand-black flex items-center justify-center text-white font-bold text-xl select-none">
+            M
+          </div>
+          <div className="space-y-8 flex flex-col items-center opacity-40">
+            <RailItem 
+              icon={<PenTool size={20} />} 
+              active={state.activeTab === 'write'} 
+              onClick={() => setState(prev => ({ ...prev, activeTab: 'write' }))} 
+              label="Workspace"
+            />
+            <RailItem 
+              icon={<Search size={20} />} 
+              active={state.activeTab === 'search'} 
+              onClick={() => {
+                setState(prev => ({ ...prev, activeTab: 'search' }));
+                setAiResult(null);
+              }} 
+              label="Assets"
+            />
+            <RailItem 
+              icon={<Sparkles size={20} />} 
+              active={state.activeTab === 'inspiration'} 
+              onClick={() => {
+                setState(prev => ({ ...prev, activeTab: 'inspiration' }));
+                setAiResult(null);
+              }} 
+              label="Muse"
+            />
+          </div>
         </div>
-
-        <nav className="flex-1 px-2 py-4 space-y-1">
-          <SidebarItem 
-            icon={<PenTool size={20} />} 
-            label="Workspace" 
-            active={state.activeTab === 'write'} 
-            collapsed={isSidebarCollapsed}
-            onClick={() => setState(prev => ({ ...prev, activeTab: 'write' }))}
-          />
-          <SidebarItem 
-            icon={<Search size={20} />} 
-            label="Asset Sourcing" 
-            active={state.activeTab === 'search'} 
-            collapsed={isSidebarCollapsed}
-            onClick={() => {
-              setState(prev => ({ ...prev, activeTab: 'search' }));
-              setAiResult(null);
-            }}
-          />
-          <SidebarItem 
-            icon={<Sparkles size={20} />} 
-            label="Inspiration" 
-            active={state.activeTab === 'inspiration'} 
-            collapsed={isSidebarCollapsed}
-            onClick={() => {
-              setState(prev => ({ ...prev, activeTab: 'inspiration' }));
-              setAiResult(null);
-            }}
-          />
-        </nav>
-
-        <div className="px-2 py-4 space-y-1 border-t border-[#141414]/5">
-          <SidebarItem 
-            icon={<Settings size={20} />} 
-            label="API Settings" 
-            collapsed={isSidebarCollapsed}
-            onClick={toggleSettings}
-          />
-          <SidebarItem 
-            icon={<Github size={20} />} 
-            label="View on GitHub" 
-            collapsed={isSidebarCollapsed}
-            onClick={() => window.open('https://github.com', '_blank')}
-          />
-          <div className="pt-2">
-            {user ? (
-              <div className="flex flex-col gap-1 px-3">
-                <button 
-                   onClick={handleLogout}
-                   className="flex items-center gap-3 w-full px-3 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg text-red-500 hover:bg-red-50 transition-all"
-                >
-                  <LogOut size={18} />
-                  {!isSidebarCollapsed && <span>Sign Out</span>}
-                </button>
-                {!isSidebarCollapsed && (
-                  <div className="px-3 py-2 flex items-center gap-2">
-                    {user.photoURL ? (
-                      <img src={user.photoURL} className="w-5 h-5 rounded-full border border-black/10" referrerPolicy="no-referrer" />
-                    ) : (
-                      <User size={16} />
-                    )}
-                    <span className="text-[9px] font-bold text-[#141414]/40 truncate">{user.email}</span>
-                  </div>
-                )}
-              </div>
-            ) : (
-             <button 
-               onClick={handleLogin}
-               className="flex items-center gap-3 w-full px-3 py-2 text-xs font-black uppercase tracking-widest rounded-lg text-[#141414] hover:bg-[#141414]/5 transition-all border border-black/5"
-             >
-               <ShieldCheck size={20} className="text-blue-500" />
-               {!isSidebarCollapsed && <span>Authenticating</span>}
+        
+        <div className="space-y-6 flex flex-col items-center">
+           <button onClick={toggleSettings} className="p-1.5 hover:bg-brand-black/5 rounded-full transition-colors text-brand-black/40 hover:text-brand-black">
+             <Settings size={20} />
+           </button>
+           {user ? (
+             <button onClick={handleLogout} className="w-8 h-8 rounded-full bg-brand-border overflow-hidden border border-brand-black/10">
+               {user.photoURL ? <img src={user.photoURL} referrerPolicy="no-referrer" /> : <User size={14} className="m-auto" />}
              </button>
-            )}
-          </div>
+           ) : (
+             <button onClick={handleLogin} className="w-8 h-8 rounded-full bg-brand-paper border border-brand-border flex items-center justify-center hover:bg-brand-border transition-colors">
+               <ShieldCheck size={16} className="text-blue-500" />
+             </button>
+           )}
         </div>
-      </motion.aside>
+      </nav>
 
-      <main className="flex-1 flex flex-col relative overflow-hidden">
-        <header className="h-14 border-b border-[#141414]/5 bg-white/50 backdrop-blur-sm flex items-center justify-between px-6 z-10">
-          <div className="flex items-center gap-4">
-            <h1 className="text-sm font-semibold uppercase tracking-widest text-[#141414]/40">Muse Draft Alpha</h1>
-            <div className="h-4 w-[1px] bg-[#141414]/10" />
-            <span className="text-xs font-mono text-[#141414]/40">Words: {state.content.split(/\s+/).filter(x => x).length}</span>
+      {/* --- MAIN CREATIVE AREA --- */}
+      <main className="flex-1 flex flex-col p-8 md:p-12 lg:p-16 bg-brand-paper relative overflow-hidden transition-all">
+        <header className="mb-12 flex justify-between items-end max-w-4xl mx-auto w-full">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.25em] text-brand-black/30 font-black mb-3 leading-none">
+              Project: {state.title || 'Muse Draft'}
+            </p>
+            <input 
+              className="text-4xl lg:text-5xl font-serif italic font-light tracking-tight bg-transparent outline-none w-full"
+              value={state.title}
+              onChange={(e) => setState(prev => ({ ...prev, title: e.target.value }))}
+              placeholder="Untitled Draft"
+            />
           </div>
-          <div className="flex items-center gap-4">
-             {!state.apiKey && (
-               <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-[10px] font-bold text-amber-700 uppercase tracking-tight">
-                 <Sparkles size={12} />
-                 API Key Missing
-               </div>
-             )}
+          <div className="flex space-x-3 mb-2 shrink-0">
+             <button className="px-5 py-2 border border-brand-black rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-brand-black/5 transition-all">
+               Export
+             </button>
              {user && (
                <button 
                  onClick={() => {
-                   // Simple manual save demo
-                   if (user) {
-                      setDoc(doc(db, 'drafts', 'current-draft'), {
+                    setDoc(doc(db, 'drafts', user.uid), {
                         ownerId: user.uid,
                         content: state.content,
-                        title: 'Untitled Draft',
+                        title: state.title,
                         updatedAt: serverTimestamp()
-                      }, { merge: true }).then(() => {
-                        alert('Draft Saved to Cloud');
-                      });
-                   }
+                      }, { merge: true }).then(() => alert('Draft Persisted'));
                  }}
-                 className="px-4 py-1.5 bg-[#141414] text-white text-[10px] font-black uppercase tracking-widest rounded-full hover:scale-105 transition-transform"
+                 className="px-5 py-2 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all shadow-md"
                >
-                 Save to Cloud
+                 Save Draft
                </button>
              )}
           </div>
         </header>
-
-        <div className="flex-1 flex overflow-hidden">
-          <section className="flex-1 overflow-y-auto bg-white p-8 md:p-12 lg:p-16 selection:bg-[#141414] selection:text-white">
+        
+        <section className="max-w-4xl mx-auto w-full flex-1 overflow-hidden relative group">
+          <div className="absolute top-0 left-0 w-full h-full">
             <textarea
               value={state.content}
               onChange={(e) => handleContentChange(e.target.value)}
-              placeholder="What are we building today? Start writing here or use the tools on the left for inspiration..."
-              className="w-full h-[80vh] text-lg leading-relaxed text-[#141414]/80 placeholder-[#141414]/20 resize-none outline-none font-serif transparent-scrollbar"
+              placeholder="The sky above the port was the color of a television..."
+              className="w-full h-full bg-transparent text-xl leading-[1.8] font-serif text-brand-black/90 placeholder-brand-black/10 resize-none outline-none transparent-scrollbar pr-4 py-4"
             />
-          </section>
+          </div>
+          <div className="absolute bottom-4 right-0 text-[10px] uppercase tracking-widest font-black text-brand-black/20 pointer-events-none group-hover:text-brand-black/40 transition-colors">
+            {state.content.split(/\s+/).filter(x => x).length} Words Collected
+          </div>
+        </section>
+      </main>
 
-          <AnimatePresence>
-            {state.activeTab !== 'write' && (
-              <motion.div
-                initial={{ x: '100%' }}
-                animate={{ x: 0 }}
-                exit={{ x: '100%' }}
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="w-[420px] bg-[#F9F9F7] border-l border-[#141414]/10 p-6 flex flex-col gap-6 overflow-y-auto shadow-2xl"
-              >
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em]">{state.activeTab === 'search' ? 'Asset Sourcing' : 'Inspiration'}</h2>
-                  <button onClick={() => setState(prev => ({ ...prev, activeTab: 'write' }))} className="p-1 hover:bg-[#141414]/5 rounded text-[#141414]/40">
-                    <X size={16} />
-                  </button>
-                </div>
+      {/* --- RIGHT FUNCTION AREA: Muse panel --- */}
+      <AnimatePresence>
+        {state.activeTab !== 'write' && (
+          <motion.aside 
+            initial={{ x: 400 }}
+            animate={{ x: 0 }}
+            exit={{ x: 400 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="w-[400px] bg-white border-l border-brand-border flex flex-col z-20 shadow-2xl"
+          >
+            <div className="p-8 border-b border-brand-border">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-[10px] uppercase tracking-[0.25em] font-black text-brand-black/30">Muse Engine</h2>
+                <button onClick={() => setState(prev => ({ ...prev, activeTab: 'write' }))} className="p-1 hover:bg-brand-black/5 rounded text-brand-black/40">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && performAISearch()}
+                  placeholder={state.activeTab === 'search' ? "Ask for assets..." : "Prompt for inspiration..."} 
+                  className="w-full bg-brand-paper border-none rounded-xl px-4 py-4 text-sm focus:ring-1 focus:ring-brand-black outline-none tracking-tight shadow-inner" 
+                />
+                <button 
+                  onClick={performAISearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-brand-black text-white rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all"
+                >
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
 
-                {state.activeTab === 'search' ? (
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#141414]/30" size={16} />
-                      <input 
-                        type="text" 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && performAISearch()}
-                        placeholder="Search for references, data, assets..." 
-                        className="w-full pl-10 pr-10 py-3 bg-white border border-[#141414]/10 rounded-xl text-sm focus:ring-1 focus:ring-[#141414] outline-none shadow-sm transition-all"
-                      />
-                      <button 
-                        onClick={performAISearch}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-[#141414] text-white rounded-lg"
-                      >
-                        <ArrowRight size={14} />
-                      </button>
-                    </div>
+            <div className="flex-1 overflow-y-auto flex flex-col p-8 transparent-scrollbar">
+              <div className="flex justify-between items-center mb-8">
+                <span className="text-[14px] font-serif italic text-brand-black/60">Creative Sourcing</span>
+                <span className="text-[10px] font-black uppercase tracking-widest underline cursor-pointer hover:text-brand-accent transition-colors" onClick={() => setAiResult(null)}>Clear</span>
+              </div>
+
+              <div className="space-y-8 flex-1">
+                {isAiLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-30">
+                    <Loader2 size={32} className="animate-spin text-brand-black" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] italic">Synthesizing Muse</p>
+                  </div>
+                ) : aiResult ? (
+                  <div className="markdown-body text-sm leading-relaxed prose prose-stone prose-sm max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <ReactMarkdown>{aiResult}</ReactMarkdown>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-2">
-                    <Tag label="Plot twist" onClick={() => getInspirationIdea('Plot Twist')} />
-                    <Tag label="Scene setting" onClick={() => getInspirationIdea('Atmospheric Scene Setting')} />
-                    <Tag label="Concept logic" onClick={() => getInspirationIdea('Technical Concept Logic')} />
-                    <Tag label="Character flaw" onClick={() => getInspirationIdea('Character Motivation/Flaw')} />
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <SuggestionCard label="Plot Twist" onClick={() => getInspirationIdea('Plot Twist')} />
+                      <SuggestionCard label="Atmosphere" onClick={() => getInspirationIdea('Atmospheric Imagery')} />
+                    </div>
+                    <div className="flex flex-col items-center opacity-10 py-12">
+                      <Sparkles size={64} strokeWidth={0.5} />
+                      <p className="text-[10px] uppercase tracking-[0.4em] mt-6 font-black italic">Awaiting Spark</p>
+                    </div>
                   </div>
                 )}
+              </div>
+            </div>
 
-                <div className="flex-1">
-                  {isAiLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                      <Loader2 size={32} className="animate-spin text-[#141414]/20" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-[#141414]/30 italic">Muse is thinking...</p>
-                    </div>
-                  ) : aiResult ? (
-                    <div className="markdown-body p-6 bg-white border border-[#141414]/5 rounded-2xl shadow-sm text-sm leading-relaxed prose prose-slate">
-                      <ReactMarkdown>{aiResult}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <div className="mt-8 flex flex-col items-center opacity-20 py-12 text-center">
-                      <Sparkles size={48} strokeWidth={1} />
-                      <p className="text-[10px] uppercase tracking-[0.3em] mt-4 font-black">
-                        {state.activeTab === 'search' ? 'Awaiting your query' : 'Awaiting the trigger'}
-                      </p>
-                    </div>
-                  )}
+            <div className="p-6 bg-brand-black text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${state.apiKeys[state.apiProvider] ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
+                  <span className="text-[10px] uppercase font-black tracking-[0.2em]">{state.apiProvider} Connected</span>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </main>
+                <div className="flex space-x-3 opacity-40">
+                   <Github size={12} className="cursor-pointer" onClick={() => window.open('https://github.com', '_blank')} />
+                </div>
+              </div>
+            </div>
+          </motion.aside>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {state.isSettingsOpen && (
@@ -351,63 +322,62 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={toggleSettings}
-              className="absolute inset-0 bg-[#F5F5F0]/80 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-paper/90 backdrop-blur-xl"
             />
             <motion.div 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 20, opacity: 0 }}
-              className="relative w-full max-w-md bg-white border border-[#141414] shadow-[16px_16px_0px_0px_#141414] p-10"
+              className="relative w-full max-w-xl bg-white border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
             >
-              <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center justify-between mb-12">
                 <div>
-                  <h3 className="text-2xl font-black tracking-tighter uppercase italic">Configuration</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-[#141414]/40 mt-1">Creator Credentials</p>
+                  <h3 className="text-3xl font-serif italic tracking-tighter">Muse Configuration</h3>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-black/30 mt-2">Provider Credentials & Global Settings</p>
                 </div>
-                <button onClick={toggleSettings} className="p-2 hover:bg-[#141414]/5 rounded-full border border-black/5">
-                  <X size={24} />
+                <button onClick={toggleSettings} className="p-3 hover:bg-brand-paper rounded-full transition-colors">
+                  <X size={28} />
                 </button>
               </div>
 
-              <div className="space-y-8">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#141414]/60 flex items-center gap-2">
-                    <Sparkles size={14} />
-                    Gemini API Key
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type="password"
-                      value={state.apiKey}
-                      onChange={(e) => setState(prev => ({ ...prev, apiKey: e.target.value }))}
-                      placeholder="sk-..."
-                      className="w-full px-4 py-4 bg-[#F9F9F7] border border-[#141414]/10 rounded-xl font-mono text-sm focus:border-[#141414] outline-none shadow-inner transition-all"
-                    />
-                  </div>
-                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
-                    <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
-                      MuseRock uses your key locally. No server-side storage. Follow best practices for local security.
-                    </p>
+              <div className="space-y-10">
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50">Active Provider</label>
+                  <div className="grid grid-cols-4 gap-2">
+                    <ProviderTab label="Gemini" active={state.apiProvider === 'gemini'} onClick={() => setState(prev => ({ ...prev, apiProvider: 'gemini' }))} />
+                    <ProviderTab label="OpenAI" active={state.apiProvider === 'openai'} onClick={() => setState(prev => ({ ...prev, apiProvider: 'openai' }))} />
+                    <ProviderTab label="Anthropic" active={state.apiProvider === 'anthropic'} onClick={() => setState(prev => ({ ...prev, apiProvider: 'anthropic' }))} />
+                    <ProviderTab label="Custom" active={state.apiProvider === 'custom'} onClick={() => setState(prev => ({ ...prev, apiProvider: 'custom' }))} />
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-[#141414]/60 flex items-center gap-2">
-                    <Keyboard size={14} />
-                    System Language
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 flex items-center gap-2">
+                    <Sparkles size={14} />
+                    {state.apiProvider.toUpperCase()} Secrets
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button className="py-3 text-xs font-black uppercase border-2 border-[#141414] bg-[#141414] text-white rounded-xl">English</button>
-                    <button className="py-3 text-xs font-black uppercase border-2 border-[#141414]/10 rounded-xl hover:bg-[#141414]/5 transition-colors">Chinese</button>
+                  <input 
+                    type="password"
+                    value={state.apiKeys[state.apiProvider]}
+                    onChange={(e) => {
+                      const newKeys = { ...state.apiKeys, [state.apiProvider]: e.target.value };
+                      setState(prev => ({ ...prev, apiKeys: newKeys }));
+                    }}
+                    placeholder={`Enter ${state.apiProvider} API key...`}
+                    className="w-full px-5 py-4 bg-brand-paper border border-brand-border rounded-xl font-mono text-sm focus:border-brand-black outline-none shadow-inner transition-all"
+                  />
+                  <div className="p-5 bg-brand-paper border-l-4 border-brand-black rounded-r-xl">
+                    <p className="text-[11px] text-brand-black/60 leading-relaxed italic">
+                      MuseRock operates as a purely local tool. Your credentials persist only in your browser's encrypted local storage.
+                    </p>
                   </div>
                 </div>
 
                 <button 
                   onClick={toggleSettings}
-                  className="group relative w-full py-5 bg-[#141414] text-white font-black uppercase tracking-[0.2em] text-[10px] hover:bg-[#000] transition-all overflow-hidden"
+                  className="w-full py-5 bg-brand-black text-white font-black uppercase tracking-[0.3em] text-[10px] hover:scale-[1.01] active:scale-[0.99] transition-all shadow-xl"
                 >
-                  <span className="relative z-10">Commence Creation</span>
-                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform" />
+                  Confirm Configuration
                 </button>
               </div>
             </motion.div>
@@ -418,40 +388,41 @@ export default function App() {
   );
 }
 
-function SidebarItem({ icon, label, active, collapsed, onClick }: { 
-  icon: React.ReactNode; 
-  label: string; 
-  active?: boolean;
-  collapsed?: boolean;
-  onClick?: () => void;
-}) {
+function RailItem({ icon, active, onClick, label }: { icon: React.ReactNode; active?: boolean; onClick: () => void; label: string }) {
   return (
     <button 
       onClick={onClick}
-      className={`
-        relative group flex items-center gap-4 w-full px-4 py-3 rounded-xl transition-all duration-300
-        ${active ? 'bg-[#141414] text-white shadow-lg' : 'text-[#141414]/50 hover:bg-[#141414]/5 hover:text-[#141414]'}
-      `}
+      className={`relative group p-3 rounded-xl transition-all duration-300 ${active ? 'bg-brand-black text-white shadow-lg' : 'text-brand-black hover:bg-brand-paper'}`}
     >
-      <div className={`shrink-0 transition-transform duration-300 ${active ? 'scale-110' : 'group-hover:scale-110'}`}>{icon}</div>
-      {!collapsed && <span className="text-xs font-black uppercase tracking-widest whitespace-nowrap">{label}</span>}
-      {collapsed && (
-        <div className="absolute left-20 px-3 py-2 bg-[#141414] text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-          {label}
-        </div>
-      )}
+      {icon}
+      <div className="absolute left-16 px-3 py-2 bg-brand-black text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50 shadow-xl">
+        {label}
+      </div>
     </button>
   );
 }
 
-function Tag({ label, onClick }: { label: string; onClick?: () => void }) {
+function ProviderTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button 
       onClick={onClick}
-      className="p-4 bg-white border border-[#141414]/10 hover:border-[#141414] hover:shadow-md rounded-2xl text-[10px] font-black uppercase tracking-wider text-[#141414]/60 hover:text-[#141414] transition-all text-left flex flex-col gap-2 group"
+      className={`py-3 text-[9px] font-black uppercase tracking-widest border-2 rounded-xl transition-all ${active ? 'border-brand-black bg-brand-black text-white' : 'border-brand-border text-brand-black opacity-40 hover:opacity-100 hover:bg-brand-paper'}`}
     >
-      <ArrowRight size={14} className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-amber-500" />
       {label}
+    </button>
+  );
+}
+
+function SuggestionCard({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button 
+      onClick={onClick}
+      className="p-5 border border-brand-border rounded-xl bg-white hover:border-brand-black hover:shadow-lg transition-all text-left flex flex-col gap-3 group"
+    >
+      <div className="w-8 h-8 rounded-lg bg-brand-paper flex items-center justify-center group-hover:scale-110 transition-transform">
+        <Sparkles size={14} className="text-brand-accent" />
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-widest text-brand-black/60 group-hover:text-brand-black transition-colors">{label}</p>
     </button>
   );
 }

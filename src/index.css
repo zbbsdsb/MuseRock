@@ -3,5 +3,30 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Georgia", serif;
+  --font-serif: "Playfair Display", "Georgia", serif;
+  
+  --color-brand-black: #1A1A1A;
+  --color-brand-offwhite: #FDFCFB;
+  --color-brand-paper: #F9F7F2;
+  --color-brand-border: #EAE6E1;
+  --color-brand-accent: #D97706;
+}
+
+@layer base {
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+  
+  body {
+    @apply bg-brand-offwhite text-brand-black;
+  }
+
+  /* Custom scrollbar to match editorial look */
+  .transparent-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .transparent-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .transparent-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-brand-black/20 rounded-full;
+  }
 }
