@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { oasisAuthService } from '../services/oasisAuth';
 import { Loader2 } from 'lucide-react';
 
 interface ContinueWithOasisButtonProps {
@@ -18,8 +17,8 @@ export function ContinueWithOasisButton({
   const handleClick = async () => {
     setIsLoading(true);
     try {
-      const authUrl = await oasisAuthService.getAuthorizationUrl(scope);
-      window.location.href = authUrl;
+      // Call backend OAuth endpoint
+      window.location.href = 'http://localhost:3001/auth/oasis';
     } catch (error) {
       if (onError) {
         onError(error as Error);

@@ -28,7 +28,6 @@ import { AIService } from './services/ai';
 import { auth, loginWithGoogle, db } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
-import { oasisAuthService } from './services/oasisAuth';
 import ContinueWithOasisButton from './components/ContinueWithOasisButton';
 
 export default function App() {
@@ -87,56 +86,35 @@ export default function App() {
 
   useEffect(() => {
     // Handle OAuth callback
-    const handleOAuthCallback = async () => {
+    const handleOAuthCallback = () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      const state = urlParams.get('state');
       const error = urlParams.get('error');
 
       if (error) {
-        const errorDescription = urlParams.get('error_description');
-        setOasisError(errorDescription || 'Authorization failed');
+        setOasisError(error);
         // Clear URL parameters
         window.history.replaceState({}, document.title, window.location.pathname);
         return;
       }
 
-      if (code && state) {
-        setIsOasisLoading(true);
-        setOasisError(null);
-        try {
-          // Validate state
-          if (!oasisAuthService.validateState(state)) {
-            throw new Error('Invalid state parameter');
-          }
-
-          // Exchange code for tokens
-          await oasisAuthService.exchangeCodeForTokens(code);
-          
-          // Get user info
-          const userInfo = await oasisAuthService.getUserInfo();
-          setOasisUser(userInfo);
-          
-          // Clear URL parameters
-          window.history.replaceState({}, document.title, window.location.pathname);
-        } catch (err) {
-          setOasisError(err instanceof Error ? err.message : 'Authentication failed');
-        } finally {
-          setIsOasisLoading(false);
-        }
-      }
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
     };
 
     // Check if user is already authenticated with Oasis
     const checkOasisAuth = async () => {
-      if (oasisAuthService.isAuthenticated()) {
-        try {
-          const userInfo = await oasisAuthService.getUserInfo();
-          setOasisUser(userInfo);
-        } catch (err) {
-          // Token might be expired, clear it
-          oasisAuthService.clearTokens();
+      try {
+        const response = await fetch('http://localhost:3001/auth/userinfo', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const userInfo = await response.json();
+          if (!userInfo.error) {
+            setOasisUser(userInfo);
+          }
         }
+      } catch (err) {
+        console.error('Error checking Oasis auth:', err);
       }
     };
 
@@ -168,9 +146,16 @@ export default function App() {
     await signOut(auth);
   };
 
-  const handleOasisLogout = () => {
-    oasisAuthService.clearTokens();
-    setOasisUser(null);
+  const handleOasisLogout = async () => {
+    try {
+      await fetch('http://localhost:3001/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      setOasisUser(null);
+    } catch (err) {
+      console.error('Error logging out from Oasis:', err);
+    }
   };
 
   const performAISearch = async () => {

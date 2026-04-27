@@ -1,0 +1,244 @@
+openapi: 3.1.0
+info:
+  title: MuseRock BFF API
+  description: Backend for Frontend API for MuseRock application
+  version: 1.0.0
+  contact:
+    name: MuseRock Team
+    email: contact@muserock.com
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+  - url: https://api.muserock.com
+    description: Production server
+
+paths:
+  /auth/oasis:
+    get:
+      summary: Redirect to Oasis authorization page
+      description: Initiates the OAuth 2.0 flow by redirecting the user to Oasis Bio's authorization page
+      operationId: getOasisAuthUrl
+      tags:
+        - Authentication
+      responses:
+        '302':
+          description: Redirect to Oasis authorization page
+          headers:
+            Location:
+              description: URL to redirect to
+              schema:
+                type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/callback:
+    get:
+      summary: Handle OAuth callback
+      description: Processes the OAuth callback from Oasis Bio and exchanges the authorization code for tokens
+      operationId: handleOasisCallback
+      tags:
+        - Authentication
+      parameters:
+        - name: code
+          in: query
+          description: Authorization code from Oasis Bio
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          description: State parameter for CSRF protection
+          required: false
+          schema:
+            type: string
+        - name: error
+          in: query
+          description: Error code from Oasis Bio
+          required: false
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect back to the application
+          headers:
+            Location:
+              description: URL to redirect to
+              schema:
+                type: string
+          cookies:
+            oasis_access_token:
+              description: Access token for Oasis Bio
+              httpOnly: true
+              secure: true
+              sameSite: strict
+            oasis_refresh_token:
+              description: Refresh token for Oasis Bio
+              httpOnly: true
+              secure: true
+              sameSite: strict
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      summary: Refresh access token
+      description: Refreshes the access token using the refresh token
+      operationId: refreshTokens
+      tags:
+        - Authentication
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: Refresh token (if not provided in cookie)
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the token was refreshed successfully
+          cookies:
+            oasis_access_token:
+              description: New access token
+              httpOnly: true
+              secure: true
+              sameSite: strict
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/userinfo:
+    get:
+      summary: Get user information
+      description: Retrieves the user's information from Oasis Bio
+      operationId: getUserInfo
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OasisUser'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      summary: Logout
+      description: Logs the user out by clearing the tokens
+      operationId: logout
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the logout was successful
+          headers:
+            Set-Cookie:
+              description: Clear access token cookie
+              schema:
+                type: string
+                example: oasis_access_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+            Set-Cookie:
+              description: Clear refresh token cookie
+              schema:
+                type: string
+                example: oasis_refresh_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    OasisUser:
+      type: object
+      properties:
+        sub:
+          type: string
+          description: User's unique identifier
+        username:
+          type: string
+          description: User's username
+          nullable: true
+        display_name:
+          type: string
+          description: User's display name
+          nullable: true
+        avatar_url:
+          type: string
+          description: URL to user's avatar
+          format: uri
+          nullable: true
+        email:
+          type: string
+          description: User's email address
+          format: email
+          nullable: true
+      required:
+        - sub
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+      required:
+        - error
+
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: oasis_access_token
+      description: Access token stored in cookie
