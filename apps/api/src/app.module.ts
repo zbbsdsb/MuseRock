@@ -6,9 +6,10 @@ import { OasisModule } from './oasis/oasis.module';
 import { McpModule } from './mcp/mcp.module';
 import { ObservabilityModule, ObservabilityMiddleware } from './observability/observability.service';
 import { ComplianceModule } from './compliance/compliance.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
-  imports: [AuthModule, MemoryModule, ApprenticeModule, OasisModule, McpModule, ObservabilityModule, ComplianceModule],
+  imports: [AuthModule, MemoryModule, ApprenticeModule, OasisModule, McpModule, ObservabilityModule, ComplianceModule, HealthModule],
   controllers: [],
   providers: [],
 })

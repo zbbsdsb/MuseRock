@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Ip } from '@nestjs/common';
 import { McpService } from './mcp.service';
 import { JsonRpcRequest, JsonRpcResponse } from './mcp.service';
 
@@ -8,15 +8,15 @@ export class McpController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  async handleJsonRpc(@Body() request: JsonRpcRequest): Promise<JsonRpcResponse> {
-    return this.mcpService.handleRequest(request);
+  async handleJsonRpc(@Body() request: JsonRpcRequest, @Ip() ip: string): Promise<JsonRpcResponse> {
+    return this.mcpService.handleRequest(request, ip);
   }
 
   @Post('batch')
   @HttpCode(HttpStatus.OK)
-  async handleBatchJsonRpc(@Body() requests: JsonRpcRequest[]): Promise<JsonRpcResponse[]> {
+  async handleBatchJsonRpc(@Body() requests: JsonRpcRequest[], @Ip() ip: string): Promise<JsonRpcResponse[]> {
     const responses = await Promise.all(
-      requests.map(request => this.mcpService.handleRequest(request)),
+      requests.map(request => this.mcpService.handleRequest(request, ip)),
     );
     return responses;
   }

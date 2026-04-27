@@ -56,54 +56,76 @@ export class MemoryService {
     layers?: string[];
     limit?: number;
   }): Promise<SearchResult[]> {
-    const results: SearchResult[] = [];
     const limit = options?.limit || 10;
 
-    // Search across all memory layers
+    // Create array of search promises
+    const searchPromises = [];
+
     if (!options?.layers || options.layers.includes('working')) {
-      const workingResults = await this.workingMemory.search(query);
-      results.push(...workingResults.map(item => ({ 
-        item, 
-        score: this.calculateScore(item, query), 
-        layer: 'working' 
-      })));
+      searchPromises.push(
+        this.workingMemory.search(query).then(results => 
+          results.map(item => ({ 
+            item, 
+            score: this.calculateScore(item, query), 
+            layer: 'working' 
+          }))
+        )
+      );
     }
 
     if (!options?.layers || options.layers.includes('episodic')) {
-      const episodicResults = await this.episodicMemory.search(query);
-      results.push(...episodicResults.map(item => ({ 
-        item, 
-        score: this.calculateScore(item, query), 
-        layer: 'episodic' 
-      })));
+      searchPromises.push(
+        this.episodicMemory.search(query).then(results => 
+          results.map(item => ({ 
+            item, 
+            score: this.calculateScore(item, query), 
+            layer: 'episodic' 
+          }))
+        )
+      );
     }
 
     if (!options?.layers || options.layers.includes('contextual')) {
-      const contextualResults = await this.contextualMemory.search(query);
-      results.push(...contextualResults.map(item => ({ 
-        item, 
-        score: this.calculateScore(item, query), 
-        layer: 'contextual' 
-      })));
+      searchPromises.push(
+        this.contextualMemory.search(query).then(results => 
+          results.map(item => ({ 
+            item, 
+            score: this.calculateScore(item, query), 
+            layer: 'contextual' 
+          }))
+        )
+      );
     }
 
     if (!options?.layers || options.layers.includes('knowledge')) {
-      const knowledgeResults = await this.knowledgeMemory.search(query);
-      results.push(...knowledgeResults.map(item => ({ 
-        item, 
-        score: this.calculateScore(item, query), 
-        layer: 'knowledge' 
-      })));
+      searchPromises.push(
+        this.knowledgeMemory.search(query).then(results => 
+          results.map(item => ({ 
+            item, 
+            score: this.calculateScore(item, query), 
+            layer: 'knowledge' 
+          }))
+        )
+      );
     }
 
     if (!options?.layers || options.layers.includes('compliance')) {
-      const complianceResults = await this.complianceMemory.search(query);
-      results.push(...complianceResults.map(item => ({ 
-        item, 
-        score: this.calculateScore(item, query), 
-        layer: 'compliance' 
-      })));
+      searchPromises.push(
+        this.complianceMemory.search(query).then(results => 
+          results.map(item => ({ 
+            item, 
+            score: this.calculateScore(item, query), 
+            layer: 'compliance' 
+          }))
+        )
+      );
     }
+
+    // Execute all searches in parallel
+    const searchResults = await Promise.all(searchPromises);
+    
+    // Flatten the results array
+    const results = searchResults.flat();
 
     // Filter by sensitivity
     const filteredResults = results.filter(result => {
