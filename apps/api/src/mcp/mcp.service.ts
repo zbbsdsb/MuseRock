@@ -4,14 +4,14 @@ import { ApprenticeService } from '../apprentice/apprentice.service';
 import { OasisService } from '../oasis/oasis.service';
 import { HealthService } from '../health/health.service';
 
-interface JsonRpcRequest {
+export interface JsonRpcRequest {
   jsonrpc: '2.0';
   method: string;
   params: any;
   id: string | number;
 }
 
-interface JsonRpcResponse {
+export interface JsonRpcResponse {
   jsonrpc: '2.0';
   result?: any;
   error?: {

@@ -10,17 +10,17 @@ interface MemoryItem {
 
 @Injectable()
 export class KnowledgeMemory {
-  private store: Map<string, MemoryItem> = new Map();
+  private memoryStore: Map<string, MemoryItem> = new Map();
   private index: Map<string, Set<string>> = new Map(); // Inverted index for faster searching
 
   async store(item: MemoryItem): Promise<MemoryItem> {
-    this.store.set(item.id, item);
+    this.memoryStore.set(item.id, item);
     this.updateIndex(item);
     return item;
   }
 
   async retrieve(id: string): Promise<MemoryItem | null> {
-    return this.store.get(id) || null;
+    return this.memoryStore.get(id) || null;
   }
 
   async search(query: string): Promise<MemoryItem[]> {
@@ -32,7 +32,7 @@ export class KnowledgeMemory {
       const itemIds = this.index.get(term);
       if (itemIds) {
         for (const id of itemIds) {
-          const item = this.store.get(id);
+          const item = this.memoryStore.get(id);
           if (item) {
             results.add(item);
           }
@@ -49,10 +49,10 @@ export class KnowledgeMemory {
   }
 
   async delete(id: string): Promise<boolean> {
-    const item = this.store.get(id);
+    const item = this.memoryStore.get(id);
     if (item) {
       this.removeFromIndex(item);
-      return this.store.delete(id);
+      return this.memoryStore.delete(id);
     }
     return false;
   }
@@ -60,7 +60,7 @@ export class KnowledgeMemory {
   async getByCategory(category: string): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
 
-    for (const item of this.store.values()) {
+    for (const item of this.memoryStore.values()) {
       if (item.metadata.category === category) {
         results.push(item);
       }

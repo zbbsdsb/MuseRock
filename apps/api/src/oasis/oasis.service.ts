@@ -264,7 +264,7 @@ export class OasisService {
 
     if (options?.sensitivity) {
       filteredAssets = filteredAssets.filter(asset => 
-        options.sensitivity.includes(asset.sensitivity)
+        options.sensitivity?.includes(asset.sensitivity)
       );
     }
 

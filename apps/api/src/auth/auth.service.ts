@@ -10,7 +10,7 @@ interface OasisTokens {
   scope: string;
 }
 
-interface OasisUser {
+export interface OasisUser {
   sub: string;
   username?: string;
   display_name?: string;

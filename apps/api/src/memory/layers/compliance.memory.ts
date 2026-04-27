@@ -10,28 +10,28 @@ interface MemoryItem {
 
 @Injectable()
 export class ComplianceMemory {
-  private store: Map<string, MemoryItem> = new Map();
+  private memoryStore: Map<string, MemoryItem> = new Map();
 
   async store(item: MemoryItem): Promise<MemoryItem> {
     // Ensure sensitivity is at least restricted for compliance memory
-    const securedItem = {
+    const securedItem: MemoryItem = {
       ...item,
       sensitivity: item.sensitivity === 'private' ? 'private' : 'restricted',
     };
 
-    this.store.set(securedItem.id, securedItem);
+    this.memoryStore.set(securedItem.id, securedItem);
     return securedItem;
   }
 
   async retrieve(id: string): Promise<MemoryItem | null> {
-    return this.store.get(id) || null;
+    return this.memoryStore.get(id) || null;
   }
 
   async search(query: string): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
     const queryLower = query.toLowerCase();
 
-    for (const item of this.store.values()) {
+    for (const item of this.memoryStore.values()) {
       // Only search if query is relevant and item is accessible
       if (
         item.content.toLowerCase().includes(queryLower) ||
@@ -48,13 +48,13 @@ export class ComplianceMemory {
   }
 
   async delete(id: string): Promise<boolean> {
-    return this.store.delete(id);
+    return this.memoryStore.delete(id);
   }
 
   async getBySensitivity(sensitivity: 'restricted' | 'private'): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
 
-    for (const item of this.store.values()) {
+    for (const item of this.memoryStore.values()) {
       if (item.sensitivity === sensitivity) {
         results.push(item);
       }

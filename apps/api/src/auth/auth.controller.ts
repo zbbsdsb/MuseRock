@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Query, Res, Req } from '@nestjs/common';
 import { Response, Request } from 'express';
-import { AuthService } from './auth.service';
+import { AuthService, OasisUser } from './auth.service';
 
 @Controller('auth')
 export class AuthController {
@@ -67,7 +67,7 @@ export class AuthController {
   }
 
   @Get('userinfo')
-  async getUserInfo(@Req() req: Request) {
+  async getUserInfo(@Req() req: Request): Promise<OasisUser | { error: string }> {
     const accessToken = req.cookies.oasis_access_token;
     if (!accessToken) {
       return { error: 'Access token not found' };

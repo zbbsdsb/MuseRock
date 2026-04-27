@@ -10,22 +10,22 @@ interface MemoryItem {
 
 @Injectable()
 export class ContextualMemory {
-  private store: Map<string, MemoryItem> = new Map();
+  private memoryStore: Map<string, MemoryItem> = new Map();
 
   async store(item: MemoryItem): Promise<MemoryItem> {
-    this.store.set(item.id, item);
+    this.memoryStore.set(item.id, item);
     return item;
   }
 
   async retrieve(id: string): Promise<MemoryItem | null> {
-    return this.store.get(id) || null;
+    return this.memoryStore.get(id) || null;
   }
 
   async search(query: string): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
     const queryLower = query.toLowerCase();
 
-    for (const item of this.store.values()) {
+    for (const item of this.memoryStore.values()) {
       if (
         item.content.toLowerCase().includes(queryLower) ||
         (item.metadata.context && item.metadata.context.toLowerCase().includes(queryLower)) ||
@@ -44,14 +44,14 @@ export class ContextualMemory {
   }
 
   async delete(id: string): Promise<boolean> {
-    return this.store.delete(id);
+    return this.memoryStore.delete(id);
   }
 
   async getByContext(context: string): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
     const contextLower = context.toLowerCase();
 
-    for (const item of this.store.values()) {
+    for (const item of this.memoryStore.values()) {
       if (item.metadata.context && item.metadata.context.toLowerCase().includes(contextLower)) {
         results.push(item);
       }

@@ -10,22 +10,22 @@ interface MemoryItem {
 
 @Injectable()
 export class EpisodicMemory {
-  private store: Map<string, MemoryItem> = new Map();
+  private memoryStore: Map<string, MemoryItem> = new Map();
 
   async store(item: MemoryItem): Promise<MemoryItem> {
-    this.store.set(item.id, item);
+    this.memoryStore.set(item.id, item);
     return item;
   }
 
   async retrieve(id: string): Promise<MemoryItem | null> {
-    return this.store.get(id) || null;
+    return this.memoryStore.get(id) || null;
   }
 
   async search(query: string): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
     const queryLower = query.toLowerCase();
 
-    for (const item of this.store.values()) {
+    for (const item of this.memoryStore.values()) {
       if (
         item.content.toLowerCase().includes(queryLower) ||
         (item.metadata.event && item.metadata.event.toLowerCase().includes(queryLower)) ||
@@ -40,13 +40,13 @@ export class EpisodicMemory {
   }
 
   async delete(id: string): Promise<boolean> {
-    return this.store.delete(id);
+    return this.memoryStore.delete(id);
   }
 
   async getByTimeRange(startTime: number, endTime: number): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
 
-    for (const item of this.store.values()) {
+    for (const item of this.memoryStore.values()) {
       if (item.timestamp >= startTime && item.timestamp <= endTime) {
         results.push(item);
       }

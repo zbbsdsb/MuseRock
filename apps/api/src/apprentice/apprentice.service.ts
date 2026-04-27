@@ -69,7 +69,7 @@ export class ApprenticeService {
 
   async deleteApprentice(id: string): Promise<boolean> {
     const result = await this.apprenticeRepository.delete(id);
-    return result.affected > 0;
+    return (result.affected ?? 0) > 0;
   }
 
   async createJob(jobData: {
@@ -132,7 +132,7 @@ export class ApprenticeService {
 
   async deleteJob(id: string): Promise<boolean> {
     const result = await this.jobRepository.delete(id);
-    return result.affected > 0;
+    return (result.affected ?? 0) > 0;
   }
 
   private async processJobs() {
@@ -215,7 +215,7 @@ export class ApprenticeService {
       case 'writer':
         return {
           content: result.content,
-          word_count: result.content.split(/\s+/).filter(x => x).length,
+          word_count: result.content.split(/\s+/).filter((x: string) => x).length,
           tokens_used: result.tokensUsed,
         };
       case 'designer':

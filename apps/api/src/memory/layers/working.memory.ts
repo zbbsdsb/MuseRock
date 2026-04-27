@@ -10,15 +10,15 @@ interface MemoryItem {
 
 @Injectable()
 export class WorkingMemory {
-  private store: Map<string, MemoryItem> = new Map();
+  private memoryStore: Map<string, MemoryItem> = new Map();
   private maxItems = 100; // Limit for working memory
 
   async store(item: MemoryItem): Promise<MemoryItem> {
     // Add to store
-    this.store.set(item.id, item);
+    this.memoryStore.set(item.id, item);
 
     // Enforce memory limit
-    if (this.store.size > this.maxItems) {
+    if (this.memoryStore.size > this.maxItems) {
       this.trimMemory();
     }
 
@@ -26,14 +26,14 @@ export class WorkingMemory {
   }
 
   async retrieve(id: string): Promise<MemoryItem | null> {
-    return this.store.get(id) || null;
+    return this.memoryStore.get(id) || null;
   }
 
   async search(query: string): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
     const queryLower = query.toLowerCase();
 
-    for (const item of this.store.values()) {
+    for (const item of this.memoryStore.values()) {
       if (
         item.content.toLowerCase().includes(queryLower) ||
         Object.values(item.metadata).some(value => 
@@ -49,18 +49,18 @@ export class WorkingMemory {
   }
 
   async delete(id: string): Promise<boolean> {
-    return this.store.delete(id);
+    return this.memoryStore.delete(id);
   }
 
   private trimMemory(): void {
     // Convert map to array and sort by timestamp (oldest first)
-    const items = Array.from(this.store.entries())
+    const items = Array.from(this.memoryStore.entries())
       .sort(([,a], [,b]) => a.timestamp - b.timestamp);
 
     // Remove oldest items until we're within limit
-    while (this.store.size > this.maxItems && items.length > 0) {
+    while (this.memoryStore.size > this.maxItems && items.length > 0) {
       const [id] = items.shift()!;
-      this.store.delete(id);
+      this.memoryStore.delete(id);
     }
   }
 }
