@@ -15,9 +15,6 @@ export class McpController {
   @Post('batch')
   @HttpCode(HttpStatus.OK)
   async handleBatchJsonRpc(@Body() requests: JsonRpcRequest[], @Ip() ip: string): Promise<JsonRpcResponse[]> {
-    const responses = await Promise.all(
-      requests.map(request => this.mcpService.handleRequest(request, ip)),
-    );
-    return responses;
+    return this.mcpService.handleBatchRequest(requests, ip);
   }
 }

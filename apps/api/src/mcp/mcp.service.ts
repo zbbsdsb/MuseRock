@@ -2,6 +2,7 @@ import { Injectable, HttpException, HttpStatus, Ip } from '@nestjs/common';
 import { MemoryService } from '../memory/memory.service';
 import { ApprenticeService } from '../apprentice/apprentice.service';
 import { OasisService } from '../oasis/oasis.service';
+import { HealthService } from '../health/health.service';
 
 interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -35,9 +36,10 @@ export class McpService {
     private readonly memoryService: MemoryService,
     private readonly apprenticeService: ApprenticeService,
     private readonly oasisService: OasisService,
+    private readonly healthService: HealthService,
   ) {}
 
-  async handleRequest(request: JsonRpcRequest, @Ip() ip: string): Promise<JsonRpcResponse> {
+  async handleRequest(request: JsonRpcRequest, ip: string): Promise<JsonRpcResponse> {
     try {
       // Check rate limit
       if (!this.checkRateLimit(ip)) {
@@ -67,6 +69,13 @@ export class McpService {
         id: request.id,
       };
     }
+  }
+
+  async handleBatchRequest(requests: JsonRpcRequest[], ip: string): Promise<JsonRpcResponse[]> {
+    const responses = await Promise.all(
+      requests.map(request => this.handleRequest(request, ip)),
+    );
+    return responses;
   }
 
   private validateRequest(request: JsonRpcRequest): void {
@@ -133,6 +142,42 @@ export class McpService {
           );
         }
         break;
+      case 'get_apprentice':
+      case 'update_apprentice':
+      case 'delete_apprentice':
+        if (!params || typeof params.id !== 'string') {
+          throw new HttpException(
+            `Invalid params for ${method}. id must be a string.`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        break;
+      case 'get_job':
+      case 'delete_job':
+        if (!params || typeof params.id !== 'string') {
+          throw new HttpException(
+            `Invalid params for ${method}. id must be a string.`,
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        break;
+      case 'list_jobs':
+        // No required params, but validate optional params if provided
+        if (params && (params.apprenticeId && typeof params.apprenticeId !== 'string')) {
+          throw new HttpException(
+            'Invalid params for list_jobs. apprenticeId must be a string if provided.',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        break;
+      case 'delete_memory':
+        if (!params || typeof params.id !== 'string') {
+          throw new HttpException(
+            'Invalid params for delete_memory. id must be a string.',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        break;
     }
   }
 
@@ -180,6 +225,22 @@ export class McpService {
         return this.listApprentices();
       case 'create_apprentice':
         return this.createApprentice(params);
+      case 'get_apprentice':
+        return this.getApprentice(params);
+      case 'update_apprentice':
+        return this.updateApprentice(params);
+      case 'delete_apprentice':
+        return this.deleteApprentice(params);
+      case 'get_job':
+        return this.getJob(params);
+      case 'list_jobs':
+        return this.listJobs(params);
+      case 'delete_job':
+        return this.deleteJob(params);
+      case 'delete_memory':
+        return this.deleteMemory(params);
+      case 'get_health_status':
+        return this.getHealthStatus();
       default:
         throw new HttpException(
           `Method ${method} not found`,
@@ -234,5 +295,59 @@ export class McpService {
     reviewMode?: 'auto' | 'manual';
   }): Promise<any> {
     return this.apprenticeService.createApprentice(params);
+  }
+
+  private async getApprentice(params: {
+    id: string;
+  }): Promise<any> {
+    return this.apprenticeService.getApprentice(params.id);
+  }
+
+  private async updateApprentice(params: {
+    id: string;
+    name?: string;
+    role?: string;
+    skills?: string[];
+    budget?: number;
+    timeout?: number;
+    reviewMode?: 'auto' | 'manual';
+  }): Promise<any> {
+    const { id, ...updates } = params;
+    return this.apprenticeService.updateApprentice(id, updates);
+  }
+
+  private async deleteApprentice(params: {
+    id: string;
+  }): Promise<any> {
+    return this.apprenticeService.deleteApprentice(params.id);
+  }
+
+  private async getJob(params: {
+    id: string;
+  }): Promise<any> {
+    return this.apprenticeService.getJob(params.id);
+  }
+
+  private async listJobs(params?: {
+    apprenticeId?: string;
+    status?: 'pending' | 'in_progress' | 'completed' | 'failed';
+  }): Promise<any> {
+    return this.apprenticeService.listJobs(params);
+  }
+
+  private async deleteJob(params: {
+    id: string;
+  }): Promise<any> {
+    return this.apprenticeService.deleteJob(params.id);
+  }
+
+  private async deleteMemory(params: {
+    id: string;
+  }): Promise<any> {
+    return this.memoryService.deleteMemory(params.id);
+  }
+
+  private async getHealthStatus(): Promise<any> {
+    return this.healthService.checkHealth();
   }
 }

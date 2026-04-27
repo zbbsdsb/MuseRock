@@ -130,6 +130,11 @@ export class ApprenticeService {
     return await query.orderBy('job.createdAt', 'DESC').getMany();
   }
 
+  async deleteJob(id: string): Promise<boolean> {
+    const result = await this.jobRepository.delete(id);
+    return result.affected > 0;
+  }
+
   private async processJobs() {
     while (true) {
       if (this.jobQueue.length > 0 && this.activeJobs.size < this.maxConcurrentJobs) {
