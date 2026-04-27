@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import logo from './assets/logo.png';
 import { 
   PenTool, 
   Sparkles, 
@@ -202,9 +203,9 @@ export default function App() {
       {/* --- MINIMAL RAIL (Editorial System Nav) --- */}
       <nav className="w-16 border-r border-brand-border flex flex-col items-center py-10 justify-between bg-white z-30 shrink-0">
         <div className="space-y-10 flex flex-col items-center">
-          {/* Logo "M" */}
-          <div className="w-10 h-10 bg-brand-black flex items-center justify-center text-white font-bold text-xl select-none">
-            M
+          {/* Logo */}
+          <div className="w-10 h-10 flex items-center justify-center select-none">
+            <img src={logo} alt="MuseRock Logo" className="w-full h-full object-contain" />
           </div>
           <div className="space-y-8 flex flex-col items-center opacity-40">
             <RailItem 
