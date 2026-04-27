@@ -1,41 +1,25 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { MemoryService } from '../memory/memory.service';
-
-interface Apprentice {
-  id: string;
-  name: string;
-  role: string;
-  skills: string[];
-  budget: number; // Token budget
-  timeout: number; // Execution timeout in milliseconds
-  reviewMode: 'auto' | 'manual';
-  createdAt: number;
-  lastUsed: number;
-}
-
-interface ApprenticeJob {
-  id: string;
-  apprenticeId: string;
-  task: string;
-  parameters: Record<string, any>;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  result?: any;
-  error?: string;
-  createdAt: number;
-  startedAt?: number;
-  completedAt?: number;
-  tokensUsed: number;
-}
+import { AIService } from '../ai/ai.service';
+import { Apprentice } from './entities/apprentice.entity';
+import { Job } from './entities/job.entity';
 
 @Injectable()
 export class ApprenticeService {
-  private apprentices: Map<string, Apprentice> = new Map();
-  private jobs: Map<string, ApprenticeJob> = new Map();
-  private jobQueue: string[] = [];
+  private jobQueue: { id: string; priority: number }[] = [];
   private activeJobs: Set<string> = new Set();
   private maxConcurrentJobs = 3;
 
-  constructor(private readonly memoryService: MemoryService) {
+  constructor(
+    @InjectRepository(Apprentice)
+    private readonly apprenticeRepository: Repository<Apprentice>,
+    @InjectRepository(Job)
+    private readonly jobRepository: Repository<Job>,
+    private readonly memoryService: MemoryService,
+    private readonly aiService: AIService
+  ) {
     // Start job processor
     this.processJobs();
   }
@@ -48,102 +32,110 @@ export class ApprenticeService {
     timeout?: number;
     reviewMode?: 'auto' | 'manual';
   }): Promise<Apprentice> {
-    const apprentice: Apprentice = {
-      id: this.generateId(),
+    const apprentice = this.apprenticeRepository.create({
       name: apprenticeData.name,
       role: apprenticeData.role,
       skills: apprenticeData.skills,
       budget: apprenticeData.budget || 1000,
       timeout: apprenticeData.timeout || 60000, // 1 minute
       reviewMode: apprenticeData.reviewMode || 'auto',
-      createdAt: Date.now(),
-      lastUsed: Date.now(),
-    };
+      lastUsed: new Date(),
+    });
 
-    this.apprentices.set(apprentice.id, apprentice);
-    return apprentice;
+    return await this.apprenticeRepository.save(apprentice);
   }
 
   async getApprentice(id: string): Promise<Apprentice | null> {
-    return this.apprentices.get(id) || null;
+    return await this.apprenticeRepository.findOne({ where: { id } });
   }
 
   async listApprentices(): Promise<Apprentice[]> {
-    return Array.from(this.apprentices.values());
+    return await this.apprenticeRepository.find();
   }
 
   async updateApprentice(id: string, updates: Partial<Apprentice>): Promise<Apprentice | null> {
-    const apprentice = this.apprentices.get(id);
+    const apprentice = await this.apprenticeRepository.findOne({ where: { id } });
     if (!apprentice) {
       return null;
     }
 
-    const updatedApprentice = {
-      ...apprentice,
+    const updatedApprentice = this.apprenticeRepository.merge(apprentice, {
       ...updates,
-      lastUsed: Date.now(),
-    };
+      lastUsed: new Date(),
+    });
 
-    this.apprentices.set(id, updatedApprentice);
-    return updatedApprentice;
+    return await this.apprenticeRepository.save(updatedApprentice);
   }
 
   async deleteApprentice(id: string): Promise<boolean> {
-    return this.apprentices.delete(id);
+    const result = await this.apprenticeRepository.delete(id);
+    return result.affected > 0;
   }
 
   async createJob(jobData: {
     apprenticeId: string;
     task: string;
     parameters: Record<string, any>;
-  }): Promise<ApprenticeJob> {
-    const apprentice = this.apprentices.get(jobData.apprenticeId);
+    priority?: number;
+  }): Promise<Job> {
+    const apprentice = await this.apprenticeRepository.findOne({ where: { id: jobData.apprenticeId } });
     if (!apprentice) {
       throw new Error('Apprentice not found');
     }
 
-    const job: ApprenticeJob = {
-      id: this.generateId(),
+    const job = this.jobRepository.create({
       apprenticeId: jobData.apprenticeId,
       task: jobData.task,
       parameters: jobData.parameters,
       status: 'pending',
       tokensUsed: 0,
-      createdAt: Date.now(),
-    };
+    });
 
-    this.jobs.set(job.id, job);
-    this.jobQueue.push(job.id);
+    const savedJob = await this.jobRepository.save(job);
+    
+    // Add job to queue with priority (higher priority = lower number)
+    const priority = jobData.priority || 0;
+    this.jobQueue.push({ id: savedJob.id, priority });
+    
+    // Sort queue by priority (ascending) and then by creation time (ascending)
+    this.jobQueue.sort((a, b) => {
+      if (a.priority !== b.priority) {
+        return a.priority - b.priority;
+      }
+      // If same priority, use job ID (which includes timestamp) as tiebreaker
+      return a.id.localeCompare(b.id);
+    });
 
-    return job;
+    return savedJob;
   }
 
-  async getJob(id: string): Promise<ApprenticeJob | null> {
-    return this.jobs.get(id) || null;
+  async getJob(id: string): Promise<Job | null> {
+    return await this.jobRepository.findOne({ where: { id } });
   }
 
   async listJobs(filters?: {
     apprenticeId?: string;
     status?: 'pending' | 'in_progress' | 'completed' | 'failed';
-  }): Promise<ApprenticeJob[]> {
-    let jobs = Array.from(this.jobs.values());
+  }): Promise<Job[]> {
+    const query = this.jobRepository.createQueryBuilder('job');
 
     if (filters?.apprenticeId) {
-      jobs = jobs.filter(job => job.apprenticeId === filters.apprenticeId);
+      query.where('job.apprenticeId = :apprenticeId', { apprenticeId: filters.apprenticeId });
     }
 
     if (filters?.status) {
-      jobs = jobs.filter(job => job.status === filters.status);
+      query.where('job.status = :status', { status: filters.status });
     }
 
-    return jobs.sort((a, b) => b.createdAt - a.createdAt);
+    return await query.orderBy('job.createdAt', 'DESC').getMany();
   }
 
   private async processJobs() {
     while (true) {
       if (this.jobQueue.length > 0 && this.activeJobs.size < this.maxConcurrentJobs) {
-        const jobId = this.jobQueue.shift();
-        if (jobId) {
+        const jobItem = this.jobQueue.shift();
+        if (jobItem) {
+          const jobId = jobItem.id;
           this.activeJobs.add(jobId);
           this.executeJob(jobId).finally(() => {
             this.activeJobs.delete(jobId);
@@ -157,22 +149,22 @@ export class ApprenticeService {
   }
 
   private async executeJob(jobId: string) {
-    const job = this.jobs.get(jobId);
+    const job = await this.jobRepository.findOne({ where: { id: jobId } });
     if (!job) return;
 
-    const apprentice = this.apprentices.get(job.apprenticeId);
+    const apprentice = await this.apprenticeRepository.findOne({ where: { id: job.apprenticeId } });
     if (!apprentice) {
       job.status = 'failed';
       job.error = 'Apprentice not found';
-      job.completedAt = Date.now();
-      this.jobs.set(jobId, job);
+      job.completedAt = new Date();
+      await this.jobRepository.save(job);
       return;
     }
 
     // Update job status
     job.status = 'in_progress';
-    job.startedAt = Date.now();
-    this.jobs.set(jobId, job);
+    job.startedAt = new Date();
+    await this.jobRepository.save(job);
 
     try {
       // Execute the task based on apprentice role and task type
@@ -181,80 +173,72 @@ export class ApprenticeService {
       // Update job with result
       job.status = 'completed';
       job.result = result;
-      job.completedAt = Date.now();
+      job.completedAt = new Date();
       job.tokensUsed = this.calculateTokensUsed(job.task, result);
 
       // Update apprentice last used time
-      apprentice.lastUsed = Date.now();
-      this.apprentices.set(apprentice.id, apprentice);
+      apprentice.lastUsed = new Date();
+      await this.apprenticeRepository.save(apprentice);
 
     } catch (error) {
       job.status = 'failed';
       job.error = error instanceof Error ? error.message : 'Unknown error';
-      job.completedAt = Date.now();
+      job.completedAt = new Date();
     } finally {
-      this.jobs.set(jobId, job);
+      await this.jobRepository.save(job);
     }
   }
 
-  private async executeTask(apprentice: Apprentice, job: ApprenticeJob): Promise<any> {
-    // Simulate task execution based on apprentice role and task type
+  private async executeTask(apprentice: Apprentice, job: Job): Promise<any> {
+    // Use AI service to execute the task based on apprentice role
+    const result = await this.aiService.generateContent(
+      job.task,
+      apprentice.role,
+      job.parameters
+    );
+
+    // Format the result based on the apprentice role
     switch (apprentice.role) {
       case 'researcher':
-        return this.executeResearchTask(job);
+        return {
+          research_results: [
+            { title: 'Research Result', content: result.content },
+          ],
+          sources: ['AI-generated research'],
+          tokens_used: result.tokensUsed,
+        };
       case 'writer':
-        return this.executeWriterTask(job);
+        return {
+          content: result.content,
+          word_count: result.content.split(/\s+/).filter(x => x).length,
+          tokens_used: result.tokensUsed,
+        };
       case 'designer':
-        return this.executeDesignerTask(job);
+        return {
+          design_concepts: [result.content],
+          style_guide: 'AI-generated design concepts',
+          tokens_used: result.tokensUsed,
+        };
       case 'musician':
-        return this.executeMusicianTask(job);
+        return {
+          music_concept: result.content,
+          tokens_used: result.tokensUsed,
+        };
       default:
-        return { message: `Task executed by ${apprentice.role}: ${job.task}` };
+        return {
+          content: result.content,
+          tokens_used: result.tokensUsed,
+        };
     }
-  }
-
-  private async executeResearchTask(job: ApprenticeJob): Promise<any> {
-    // Simulate research task
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    return {
-      research_results: [
-        { title: 'Research Result 1', content: 'This is a research result' },
-        { title: 'Research Result 2', content: 'This is another research result' },
-      ],
-      sources: ['source1.com', 'source2.com'],
-    };
-  }
-
-  private async executeWriterTask(job: ApprenticeJob): Promise<any> {
-    // Simulate writing task
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    return {
-      content: `Generated content for task: ${job.task}\n\nThis is a sample of generated writing based on the task parameters.`,
-      word_count: 150,
-    };
-  }
-
-  private async executeDesignerTask(job: ApprenticeJob): Promise<any> {
-    // Simulate design task
-    await new Promise(resolve => setTimeout(resolve, 4000));
-    return {
-      design_concepts: ['Concept 1', 'Concept 2', 'Concept 3'],
-      style_guide: 'Modern, minimalist design with bold typography',
-    };
-  }
-
-  private async executeMusicianTask(job: ApprenticeJob): Promise<any> {
-    // Simulate music task
-    await new Promise(resolve => setTimeout(resolve, 5000));
-    return {
-      music_genres: ['Ambient', 'Electronic', 'Classical'],
-      mood: 'Calm and reflective',
-      tempo: 'Moderate',
-    };
   }
 
   private calculateTokensUsed(task: string, result: any): number {
-    // Simple token calculation based on task length and result complexity
+    // Use actual token usage from AI service if available
+    if (result.tokens_used && result.tokens_used.total) {
+      return result.tokens_used.total;
+    }
+    
+    // Fallback to simple token calculation based on task length and result complexity
     const taskTokens = task.length / 4; // Rough estimate
     const resultTokens = JSON.stringify(result).length / 4;
     return Math.round(taskTokens + resultTokens);
