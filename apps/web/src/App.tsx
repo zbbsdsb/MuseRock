@@ -21,7 +21,11 @@ import {
   Keyboard,
   Loader2,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  Download,
+  FileText,
+  FileDown,
+  FileImage
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { MuseRockState, MuseRockMessage, ApiProvider, OasisUser } from './types';
@@ -30,6 +34,7 @@ import { auth, loginWithGoogle, db } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
 import ContinueWithOasisButton from './components/ContinueWithOasisButton';
+import { exportToMarkdown, exportToWord, exportToPDF } from './utils/export';
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
@@ -74,6 +79,8 @@ export default function App() {
   const [isOasisLoading, setIsOasisLoading] = useState(false);
   const [oasisError, setOasisError] = useState<string | null>(null);
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const aiServiceRef = useRef<AIService | null>(null);
 
   useEffect(() => {
@@ -132,6 +139,24 @@ export default function App() {
     }
   }, [state]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const exportMenu = document.querySelector('.export-menu-container');
+      if (exportMenu && !exportMenu.contains(target)) {
+        setIsExportMenuOpen(false);
+      }
+    };
+
+    if (isExportMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isExportMenuOpen]);
+
   const toggleSettings = () => setState(prev => ({ ...prev, isSettingsOpen: !prev.isSettingsOpen }));
   
   const handleContentChange = (val: string) => setState(prev => ({ ...prev, content: val }));
@@ -146,6 +171,30 @@ export default function App() {
 
   const handleLogout = async () => {
     await signOut(auth);
+  };
+
+  const handleExport = async (format: 'markdown' | 'word' | 'pdf') => {
+    setIsExporting(true);
+    setIsExportMenuOpen(false);
+    
+    try {
+      switch (format) {
+        case 'markdown':
+          await exportToMarkdown({ title: state.title, content: state.content });
+          break;
+        case 'word':
+          await exportToWord({ title: state.title, content: state.content });
+          break;
+        case 'pdf':
+          await exportToPDF({ title: state.title, content: state.content });
+          break;
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleOasisLogout = async () => {
@@ -273,9 +322,47 @@ export default function App() {
             />
           </div>
           <div className="flex space-x-3 mb-2 shrink-0">
-             <button className="px-5 py-2 border border-brand-black rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-brand-black/5 transition-all">
-               Export
-             </button>
+             <div className="relative export-menu-container">
+               <button 
+                 onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                 className="px-5 py-2 border border-brand-black rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-brand-black/5 transition-all flex items-center gap-2"
+               >
+                 <Download size={14} />
+                 {isExporting ? 'Exporting...' : 'Export'}
+               </button>
+               <AnimatePresence>
+                 {isExportMenuOpen && (
+                   <motion.div
+                     initial={{ opacity: 0, y: -10 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     exit={{ opacity: 0, y: -10 }}
+                     className="absolute top-full right-0 mt-2 bg-white border border-brand-border rounded-xl shadow-xl py-2 z-50 min-w-[180px]"
+                   >
+                     <button 
+                       onClick={() => handleExport('markdown')}
+                       className="w-full px-4 py-3 text-left text-sm hover:bg-brand-paper flex items-center gap-3 transition-colors"
+                     >
+                       <FileText size={16} className="text-brand-black/60" />
+                       <span>Export as Markdown</span>
+                     </button>
+                     <button 
+                       onClick={() => handleExport('word')}
+                       className="w-full px-4 py-3 text-left text-sm hover:bg-brand-paper flex items-center gap-3 transition-colors"
+                     >
+                       <FileDown size={16} className="text-brand-black/60" />
+                       <span>Export as Word</span>
+                     </button>
+                     <button 
+                       onClick={() => handleExport('pdf')}
+                       className="w-full px-4 py-3 text-left text-sm hover:bg-brand-paper flex items-center gap-3 transition-colors"
+                     >
+                       <FileImage size={16} className="text-brand-black/60" />
+                       <span>Export as PDF</span>
+                     </button>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
+             </div>
              {user && (
                <button 
                  onClick={() => {
