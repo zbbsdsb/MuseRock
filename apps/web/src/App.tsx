@@ -73,6 +73,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isOasisLoading, setIsOasisLoading] = useState(false);
   const [oasisError, setOasisError] = useState<string | null>(null);
+  const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
   const aiServiceRef = useRef<AIService | null>(null);
 
   useEffect(() => {
@@ -235,37 +236,25 @@ export default function App() {
           </div>
         </div>
         
-        <div className="space-y-6 flex flex-col items-end">
-           <button onClick={toggleSettings} className="p-1.5 hover:bg-brand-black/5 rounded-full transition-colors text-brand-black/40 hover:text-brand-black">
-             <Settings size={20} />
-           </button>
-           {user ? (
-             <button onClick={handleLogout} className="w-8 h-8 rounded-full bg-brand-border overflow-hidden border border-brand-black/10">
-               {user.photoURL ? <img src={user.photoURL} referrerPolicy="no-referrer" /> : <User size={14} className="m-auto" />}
-             </button>
-           ) : oasisUser ? (
-             <button onClick={handleOasisLogout} className="w-8 h-8 rounded-full bg-brand-border overflow-hidden border border-brand-black/10">
-               {oasisUser.avatar_url ? <img src={oasisUser.avatar_url} referrerPolicy="no-referrer" /> : <User size={14} className="m-auto" />}
-             </button>
-           ) : (
-             <div className="flex flex-col items-end gap-2">
-               <button onClick={handleLogin} className="w-8 h-8 rounded-full bg-brand-paper border border-brand-border flex items-center justify-center hover:bg-brand-border transition-colors">
-                 <ShieldCheck size={16} className="text-blue-500" />
-               </button>
-               <ContinueWithOasisButton />
-             </div>
-           )}
-           {isOasisLoading && (
-             <div className="flex items-center gap-2 text-sm text-brand-black/60">
-               <Loader2 size={14} className="animate-spin" />
-               <span>Authenticating...</span>
-             </div>
-           )}
-           {oasisError && (
-             <div className="text-sm text-red-500 max-w-xs text-right">
-               {oasisError}
-             </div>
-           )}
+        <div className="space-y-6 flex flex-col items-center">
+          <button onClick={toggleSettings} className="p-1.5 hover:bg-brand-black/5 rounded-full transition-colors text-brand-black/40 hover:text-brand-black">
+            <Settings size={20} />
+          </button>
+          <button 
+            onClick={() => setIsUserPanelOpen(true)}
+            className="w-10 h-10 rounded-full bg-brand-paper border border-brand-border flex flex-col items-center justify-center hover:bg-brand-border transition-all group relative"
+          >
+            {user ? (
+              <img src={user.photoURL || ''} referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover" />
+            ) : oasisUser ? (
+              <img src={oasisUser.avatar_url || ''} referrerPolicy="no-referrer" className="w-8 h-8 rounded-full object-cover" />
+            ) : (
+              <User size={18} className="text-brand-black/40 group-hover:text-brand-black" />
+            )}
+            <span className="absolute -bottom-1 text-[8px] font-black uppercase tracking-widest text-brand-black/30 group-hover:text-brand-black/60 transition-colors whitespace-nowrap">
+              {user?.displayName || oasisUser?.display_name || 'User'}
+            </span>
+          </button>
         </div>
       </nav>
 
@@ -467,6 +456,101 @@ export default function App() {
                   Confirm Configuration
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isUserPanelOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsUserPanelOpen(false)}
+              className="absolute inset-0 bg-brand-paper/90 backdrop-blur-xl"
+            />
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              className="relative w-full max-w-md bg-white border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-2xl font-serif italic tracking-tighter">Account</h3>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-black/30 mt-2">Manage Your Session</p>
+                </div>
+                <button onClick={() => setIsUserPanelOpen(false)} className="p-3 hover:bg-brand-paper rounded-full transition-colors">
+                  <X size={24} />
+                </button>
+              </div>
+
+              {user || oasisUser ? (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 p-4 bg-brand-paper rounded-xl">
+                    <div className="w-14 h-14 rounded-full bg-brand-border overflow-hidden border border-brand-black/10">
+                      {user?.photoURL ? (
+                        <img src={user.photoURL} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                      ) : oasisUser?.avatar_url ? (
+                        <img src={oasisUser.avatar_url} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={24} className="m-auto text-brand-black/40" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-serif italic text-lg">
+                        {user?.displayName || oasisUser?.display_name || 'User'}
+                      </p>
+                      <p className="text-sm text-brand-black/50">
+                        {user?.email || oasisUser?.email || 'No email provided'}
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (user) handleLogout();
+                      else handleOasisLogout();
+                      setIsUserPanelOpen(false);
+                    }}
+                    className="w-full py-4 border border-brand-black rounded-xl text-[10px] uppercase tracking-[0.2em] font-black hover:bg-brand-black hover:text-white transition-all"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <p className="text-[11px] text-brand-black/60 leading-relaxed italic text-center">
+                    Connect your account to enable cloud sync and additional features.
+                  </p>
+                  <div className="space-y-4">
+                    <button 
+                      onClick={() => {
+                        handleLogin();
+                        setIsUserPanelOpen(false);
+                      }}
+                      className="w-full py-4 bg-brand-black text-white rounded-xl text-[10px] uppercase tracking-[0.2em] font-black hover:opacity-90 transition-all flex items-center justify-center gap-3"
+                    >
+                      <ShieldCheck size={16} className="text-blue-400" />
+                      Continue with Google
+                    </button>
+                    <ContinueWithOasisButton className="w-full" />
+                  </div>
+                </div>
+              )}
+
+              {isOasisLoading && (
+                <div className="flex items-center justify-center gap-3 mt-6 text-sm text-brand-black/60">
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Authenticating...</span>
+                </div>
+              )}
+              {oasisError && (
+                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                  <p className="text-sm text-red-600">{oasisError}</p>
+                </div>
+              )}
             </motion.div>
           </div>
         )}
