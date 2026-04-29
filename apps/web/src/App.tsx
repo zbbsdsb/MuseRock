@@ -34,6 +34,7 @@ import { auth, loginWithGoogle, db } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
 import ContinueWithOasisButton from './components/ContinueWithOasisButton';
+import MuseDashboard from './components/MuseDashboard';
 import { exportToMarkdown, exportToWord, exportToPDF } from './utils/export';
 
 export default function App() {
@@ -73,6 +74,7 @@ export default function App() {
   });
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -273,14 +275,11 @@ export default function App() {
               }} 
               label="Assets"
             />
-            <RailItem 
-              icon={<Sparkles size={20} />} 
-              active={state.activeTab === 'inspiration'} 
-              onClick={() => {
-                setState(prev => ({ ...prev, activeTab: 'inspiration' }));
-                setAiResult(null);
-              }} 
-              label="Muse"
+            <RailItem
+              icon={<Sparkles size={20} />}
+              active={false}
+              onClick={() => setIsDashboardOpen(true)}
+              label="Dashboard"
             />
           </div>
         </div>
@@ -642,6 +641,11 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      <MuseDashboard
+        isOpen={isDashboardOpen}
+        onClose={() => setIsDashboardOpen(false)}
+      />
     </div>
   );
 }
