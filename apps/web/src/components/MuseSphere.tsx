@@ -1,20 +1,17 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, X, Bot, Search, PenTool, FileText } from 'lucide-react';
+import { useMuseSphereContext } from '../providers/MuseSphereProvider';
 
-interface MuseSphereProps {
-  onQuickAction?: (action: string) => void;
-  isAiActive?: boolean;
-}
-
-export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProps) {
+export default function MuseSphere() {
+  const { isAiActive, onQuickAction } = useMuseSphereContext();
+  
   const [position, setPosition] = useState({ x: window.innerWidth - 100, y: window.innerHeight - 120 });
   const [isDragging, setIsDragging] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
-  // Load saved position from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('musesphere_position');
     if (saved) {
@@ -26,14 +23,12 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
     }
   }, []);
 
-  // Save position to localStorage when it changes
   useEffect(() => {
     if (!isDragging) {
       localStorage.setItem('musesphere_position', JSON.stringify(position));
     }
   }, [position, isDragging]);
 
-  // Mouse event handlers for dragging
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     dragOffset.current = {
@@ -48,7 +43,6 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
     let newX = e.clientX - dragOffset.current.x;
     let newY = e.clientY - dragOffset.current.y;
     
-    // Keep within window bounds
     newX = Math.max(20, Math.min(window.innerWidth - 80, newX));
     newY = Math.max(20, Math.min(window.innerHeight - 80, newY));
     
@@ -59,7 +53,6 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
     setIsDragging(false);
   };
 
-  // Add global mouse move/up listeners when dragging
   useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', handleMouseMove);
@@ -71,20 +64,17 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
     }
   }, [isDragging]);
 
-  // Handle sphere click (don't open menu when dragging)
   const handleSphereClick = (e: React.MouseEvent) => {
     if (!isDragging) {
       setIsMenuOpen(!isMenuOpen);
     }
   };
 
-  // Handle quick action
   const handleAction = (action: string) => {
     setIsMenuOpen(false);
-    onQuickAction?.(action);
+    onQuickAction(action);
   };
 
-  // Drag and drop handlers
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
@@ -98,17 +88,13 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
     e.preventDefault();
     setIsDragOver(false);
     
-    // Handle dropped content
     const text = e.dataTransfer.getData('text');
-    const html = e.dataTransfer.getData('text/html');
     const files = e.dataTransfer.files;
     
     if (files.length > 0) {
       console.log('Dropped files:', files);
-      // Handle image/files
     } else if (text) {
       console.log('Dropped text:', text);
-      // Handle text
     }
   };
 
@@ -117,7 +103,6 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
       className="fixed z-50 pointer-events-none"
       style={{ left: position.x, top: position.y }}
     >
-      {/* Quick Action Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -181,7 +166,6 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
         )}
       </AnimatePresence>
 
-      {/* The Sphere */}
       <motion.div
         drag={!isMenuOpen}
         dragMomentum={false}
@@ -199,7 +183,6 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
       >
-        {/* Glow effect behind */}
         <div 
           className={`absolute inset-0 rounded-full blur-xl transition-all duration-300 ${
             isAiActive 
@@ -210,7 +193,6 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
           }`}
         />
         
-        {/* Main orb */}
         <div 
           className={`
             relative w-16 h-16 rounded-full cursor-grab active:cursor-grabbing
@@ -220,13 +202,10 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
             shadow-xl
             transition-all duration-300
             ${isDragOver ? 'ring-4 ring-cyan-400/50' : ''}
-            ${isDragging ? 'cursor-grabbing' : ''}
           `}
         >
-          {/* Inner reflection */}
           <div className="absolute top-2 left-3 w-4 h-4 rounded-full bg-white/60 blur-sm" />
           
-          {/* Icon */}
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.div
               animate={{
@@ -247,7 +226,6 @@ export default function MuseSphere({ onQuickAction, isAiActive }: MuseSphereProp
           </div>
         </div>
         
-        {/* Status indicator */}
         {isAiActive && (
           <motion.div
             initial={{ scale: 0, opacity: 0 }}

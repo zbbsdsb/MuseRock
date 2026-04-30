@@ -35,6 +35,8 @@ import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth
 import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
 import ContinueWithOasisButton from './components/ContinueWithOasisButton';
 import MuseDashboard from './components/MuseDashboard';
+import MuseSphere from './components/MuseSphere';
+import { MuseSphereProvider } from './providers/MuseSphereProvider';
 import { exportToMarkdown, exportToWord, exportToPDF } from './utils/export';
 
 export default function App() {
@@ -646,6 +648,30 @@ export default function App() {
         isOpen={isDashboardOpen}
         onClose={() => setIsDashboardOpen(false)}
       />
+
+      <MuseSphereProvider
+        isAiActive={isAiLoading}
+        onQuickAction={async (action: string) => {
+          switch (action) {
+            case 'inspiration':
+              setState(prev => ({ ...prev, activeTab: 'search' }));
+              setAiResult(null);
+              await getInspirationIdea('Plot Twist');
+              break;
+            case 'search':
+              setState(prev => ({ ...prev, activeTab: 'search' }));
+              setAiResult(null);
+              break;
+            case 'write':
+              setState(prev => ({ ...prev, activeTab: 'write' }));
+              break;
+            case 'note':
+              break;
+          }
+        }}
+      >
+        <MuseSphere />
+      </MuseSphereProvider>
     </div>
   );
 }
