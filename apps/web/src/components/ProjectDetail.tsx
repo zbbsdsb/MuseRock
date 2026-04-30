@@ -20,22 +20,24 @@ const tabs = [
 export default function ProjectDetail({ project, activeTab, onTabChange, onBack }: ProjectDetailProps) {
   return (
     <div className="h-full flex">
-      <aside className="w-64 border-r border-brand-border bg-white p-4 shrink-0 flex flex-col">
-        <div className="mb-6 flex-1">
-          <h3 className="text-brand-black/40 text-xs font-semibold uppercase tracking-wider mb-3">Elements</h3>
-          <div className="space-y-1">
+      <aside className="w-72 border-r border-brand-border bg-brand-paper p-6 shrink-0 flex flex-col">
+        <div className="mb-8 flex-1">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-black/30 mb-4">Elements</h3>
+          <div className="space-y-2">
             {project.elements.length === 0 ? (
-              <p className="text-brand-black/30 text-xs italic">No elements yet</p>
+              <p className="text-brand-black/20 text-xs italic font-serif">No elements yet</p>
             ) : (
               project.elements.map((element) => (
                 <div
                   key={element.id}
-                  className="flex items-center gap-2 p-2 rounded-lg hover:bg-brand-paper transition-colors cursor-pointer group"
+                  className="flex items-center gap-3 p-3 rounded-full hover:bg-white transition-all cursor-pointer group border border-transparent hover:border-brand-border"
                 >
-                  {element.type === 'document' && <FileText size={14} className="text-blue-500" />}
-                  {element.type === 'canvas' && <Image size={14} className="text-purple-500" />}
-                  {element.type === 'card' && <Lightbulb size={14} className="text-amber-500" />}
-                  {element.type === 'image' && <Image size={14} className="text-emerald-500" />}
+                  <div className="w-8 h-8 rounded-full bg-brand-paper flex items-center justify-center group-hover:scale-110 transition-transform">
+                    {element.type === 'document' && <FileText size={14} className="text-blue-500" />}
+                    {element.type === 'canvas' && <Image size={14} className="text-purple-500" />}
+                    {element.type === 'card' && <Lightbulb size={14} className="text-amber-500" />}
+                    {element.type === 'image' && <Image size={14} className="text-emerald-500" />}
+                  </div>
                   <span className="text-brand-black/70 text-sm flex-1 truncate">{element.name}</span>
                 </div>
               ))
@@ -45,34 +47,34 @@ export default function ProjectDetail({ project, activeTab, onTabChange, onBack 
 
         <button
           onClick={onBack}
-          className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-brand-paper text-brand-black/60 hover:text-brand-black hover:bg-brand-border transition-all border border-brand-border"
+          className="mt-4 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-brand-black/60 hover:text-brand-black hover:bg-brand-border transition-all border border-brand-border"
         >
-          <ChevronLeft size={18} />
-          <span className="text-sm font-medium">Back to Projects</span>
+          <ChevronLeft size={16} />
+          <span className="text-xs font-black uppercase tracking-widest">Back to Projects</span>
         </button>
       </aside>
 
       <div className="flex-1 flex flex-col bg-brand-offwhite">
-        <div className="border-b border-brand-border bg-white px-6">
+        <div className="border-b border-brand-border bg-brand-paper px-8">
           <div className="flex items-center gap-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className={`relative px-4 py-3 text-sm font-medium transition-colors ${
+                className={`relative px-6 py-4 text-xs font-black uppercase tracking-widest transition-all ${
                   activeTab === tab.id
                     ? 'text-brand-black'
-                    : 'text-brand-black/50 hover:text-brand-black/70'
+                    : 'text-brand-black/40 hover:text-brand-black/70'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <tab.icon size={16} />
+                  <tab.icon size={14} />
                   {tab.label}
                 </div>
                 {activeTab === tab.id && (
                   <motion.div
                     layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-violet-500"
+                    className="absolute bottom-0 left-4 right-4 h-0.5 bg-violet-500 rounded-full"
                   />
                 )}
               </button>
@@ -80,17 +82,17 @@ export default function ProjectDetail({ project, activeTab, onTabChange, onBack 
           </div>
         </div>
 
-        <div className="flex-1 p-8 overflow-y-auto">
+        <div className="flex-1 p-12 overflow-y-auto">
           {activeTab === 'notes' && (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-4">
-                <FileText size={40} className="text-violet-500/50" />
+              <div className="w-24 h-24 rounded-full bg-violet-500/10 flex items-center justify-center mb-6">
+                <FileText size={48} className="text-violet-500/40" />
               </div>
-              <h3 className="text-brand-black/60 text-lg font-medium mb-2">Notes Panel</h3>
-              <p className="text-brand-black/40 text-sm max-w-md">
+              <h3 className="text-2xl font-serif italic text-brand-black/70 mb-3">Notes</h3>
+              <p className="text-brand-black/40 text-sm max-w-md leading-relaxed">
                 Capture thoughts, context, and ideas. Notes help you organize your creative process.
               </p>
-              <button className="mt-4 px-4 py-2 bg-violet-500 text-white text-sm font-medium rounded-lg hover:bg-violet-600 transition-colors">
+              <button className="mt-8 px-8 py-3 bg-violet-500 text-white text-xs font-black uppercase tracking-widest rounded-full hover:bg-violet-600 transition-all shadow-lg">
                 Create Note
               </button>
             </div>
@@ -98,14 +100,14 @@ export default function ProjectDetail({ project, activeTab, onTabChange, onBack 
 
           {activeTab === 'inspiration' && (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-4">
-                <Sparkles size={40} className="text-amber-500/50" />
+              <div className="w-24 h-24 rounded-full bg-amber-500/10 flex items-center justify-center mb-6">
+                <Sparkles size={48} className="text-amber-500/40" />
               </div>
-              <h3 className="text-brand-black/60 text-lg font-medium mb-2">Inspiration Panel</h3>
-              <p className="text-brand-black/40 text-sm max-w-md">
+              <h3 className="text-2xl font-serif italic text-brand-black/70 mb-3">Inspiration</h3>
+              <p className="text-brand-black/40 text-sm max-w-md leading-relaxed">
                 Nurture creative inspiration. Generate ideas and save them as cards for later use.
               </p>
-              <button className="mt-4 px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors">
+              <button className="mt-8 px-8 py-3 bg-amber-500 text-white text-xs font-black uppercase tracking-widest rounded-full hover:bg-amber-600 transition-all shadow-lg">
                 Get Inspiration
               </button>
             </div>
@@ -113,14 +115,14 @@ export default function ProjectDetail({ project, activeTab, onTabChange, onBack 
 
           {activeTab === 'structure' && (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
-                <FolderTree size={40} className="text-emerald-500/50" />
+              <div className="w-24 h-24 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6">
+                <FolderTree size={48} className="text-emerald-500/40" />
               </div>
-              <h3 className="text-brand-black/60 text-lg font-medium mb-2">Structure Panel</h3>
-              <p className="text-brand-black/40 text-sm max-w-md">
+              <h3 className="text-2xl font-serif italic text-brand-black/70 mb-3">Structure</h3>
+              <p className="text-brand-black/40 text-sm max-w-md leading-relaxed">
                 Visualize your project structure. Drag and drop to organize elements.
               </p>
-              <button className="mt-4 px-4 py-2 bg-emerald-500 text-white text-sm font-medium rounded-lg hover:bg-emerald-600 transition-colors">
+              <button className="mt-8 px-8 py-3 bg-emerald-500 text-white text-xs font-black uppercase tracking-widest rounded-full hover:bg-emerald-600 transition-all shadow-lg">
                 Add Element
               </button>
             </div>
@@ -128,11 +130,11 @@ export default function ProjectDetail({ project, activeTab, onTabChange, onBack 
 
           {activeTab === 'settings' && (
             <div className="h-full flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 rounded-2xl bg-brand-black/5 flex items-center justify-center mb-4">
-                <Settings size={40} className="text-brand-black/30" />
+              <div className="w-24 h-24 rounded-full bg-brand-black/5 flex items-center justify-center mb-6">
+                <Settings size={48} className="text-brand-black/20" />
               </div>
-              <h3 className="text-brand-black/60 text-lg font-medium mb-2">Project Settings</h3>
-              <p className="text-brand-black/40 text-sm max-w-md">
+              <h3 className="text-2xl font-serif italic text-brand-black/70 mb-3">Settings</h3>
+              <p className="text-brand-black/40 text-sm max-w-md leading-relaxed">
                 Configure project metadata, privacy settings, and export options.
               </p>
             </div>

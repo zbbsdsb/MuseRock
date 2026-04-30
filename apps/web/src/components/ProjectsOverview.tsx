@@ -37,51 +37,51 @@ export default function ProjectsOverview({
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="max-w-7xl mx-auto px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
+      <div className="max-w-7xl mx-auto px-8 py-12">
+        <div className="flex items-center justify-between mb-10">
           <div>
-            <h2 className="text-2xl font-bold text-brand-black mb-1">My Projects</h2>
-            <p className="text-brand-black/50 text-sm">{projects.length} projects</p>
+            <h2 className="text-3xl font-serif italic text-brand-black mb-2">My Projects</h2>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-black/30">{projects.length} projects</p>
           </div>
 
-          <div className="flex items-center gap-2 bg-brand-paper rounded-xl p-1 border border-brand-border">
+          <div className="flex items-center gap-2 bg-brand-paper rounded-full p-1 border border-brand-border">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
                 filter === 'all'
                   ? 'bg-violet-500 text-white'
-                  : 'text-brand-black/60 hover:text-brand-black'
+                  : 'text-brand-black/50 hover:text-brand-black'
               }`}
             >
               All
             </button>
             <button
               onClick={() => setFilter('favorites')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
                 filter === 'favorites'
                   ? 'bg-violet-500 text-white'
-                  : 'text-brand-black/60 hover:text-brand-black'
+                  : 'text-brand-black/50 hover:text-brand-black'
               }`}
             >
-              <Star size={14} />
+              <Star size={12} />
               Favorites
             </button>
             <button
               onClick={() => setFilter('recent')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
                 filter === 'recent'
                   ? 'bg-violet-500 text-white'
-                  : 'text-brand-black/60 hover:text-brand-black'
+                  : 'text-brand-black/50 hover:text-brand-black'
               }`}
             >
-              <Clock size={14} />
+              <Clock size={12} />
               Recent
             </button>
           </div>
         </div>
 
         {filter === 'all' && !searchQuery && (
-          <div className="mb-8">
+          <div className="mb-10">
             <QuickAccess
               recentProjects={recentProjects}
               onSelectProject={onSelectProject}
@@ -115,18 +115,18 @@ export default function ProjectsOverview({
           ))}
 
           {filteredProjects.length === 0 && filter !== 'all' && (
-            <div className="col-span-full py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-brand-black/5 flex items-center justify-center mx-auto mb-4">
+            <div className="col-span-full py-24 text-center">
+              <div className="w-20 h-20 rounded-full bg-brand-black/5 flex items-center justify-center mx-auto mb-6">
                 {filter === 'favorites' ? (
-                  <Star size={32} className="text-brand-black/20" />
+                  <Star size={40} className="text-brand-black/20" />
                 ) : (
-                  <Clock size={32} className="text-brand-black/20" />
+                  <Clock size={40} className="text-brand-black/20" />
                 )}
               </div>
-              <h3 className="text-brand-black/60 text-lg font-medium mb-2">
+              <h3 className="text-xl font-serif italic text-brand-black/60 mb-3">
                 {filter === 'favorites' ? 'No favorites yet' : 'No recent projects'}
               </h3>
-              <p className="text-brand-black/40 text-sm">
+              <p className="text-brand-black/40 text-sm max-w-md mx-auto">
                 {filter === 'favorites'
                   ? 'Star projects to see them here'
                   : 'Start working on a project to see it here'}
@@ -135,12 +135,12 @@ export default function ProjectsOverview({
           )}
 
           {filter === 'all' && projects.length === 0 && (
-            <div className="col-span-full py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-brand-black/5 flex items-center justify-center mx-auto mb-4">
-                <FolderOpen size={32} className="text-brand-black/20" />
+            <div className="col-span-full py-24 text-center">
+              <div className="w-20 h-20 rounded-full bg-brand-black/5 flex items-center justify-center mx-auto mb-6">
+                <FolderOpen size={40} className="text-brand-black/20" />
               </div>
-              <h3 className="text-brand-black/60 text-lg font-medium mb-2">No projects yet</h3>
-              <p className="text-brand-black/40 text-sm">Create your first project to get started</p>
+              <h3 className="text-xl font-serif italic text-brand-black/60 mb-3">No projects yet</h3>
+              <p className="text-brand-black/40 text-sm max-w-md mx-auto">Create your first project to get started</p>
             </div>
           )}
         </motion.div>

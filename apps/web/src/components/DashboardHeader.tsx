@@ -1,4 +1,4 @@
-import { Search, Settings, User, ChevronLeft, X } from 'lucide-react';
+import { Search, Settings, User, ChevronLeft, X, Sparkles } from 'lucide-react';
 import { Project } from './types';
 
 interface DashboardHeaderProps {
@@ -19,28 +19,28 @@ export default function DashboardHeader({
   onClose,
 }: DashboardHeaderProps) {
   return (
-    <header className="h-16 border-b border-brand-border bg-white flex items-center justify-between px-6 shrink-0">
-      <div className="flex items-center gap-4">
+    <header className="h-20 border-b border-brand-border bg-brand-paper flex items-center justify-between px-8 shrink-0">
+      <div className="flex items-center gap-6">
         {viewMode === 'project' && (
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-brand-black/60 hover:text-brand-black transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-brand-black/60 hover:text-brand-black hover:bg-white transition-all border border-transparent hover:border-brand-border"
           >
-            <ChevronLeft size={20} />
-            <span className="text-sm font-medium">Back to Projects</span>
+            <ChevronLeft size={18} />
+            <span className="text-xs font-black uppercase tracking-widest">Back</span>
           </button>
         )}
 
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">M</span>
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
+            <Sparkles size={20} className="text-white" />
           </div>
           <div>
-            <h1 className="text-brand-black font-semibold text-sm">
+            <h1 className="text-lg font-serif italic text-brand-black tracking-tight">
               {viewMode === 'overview' ? 'Muse Dashboard' : activeProject?.name || 'Project'}
             </h1>
             {viewMode === 'project' && activeProject && (
-              <p className="text-brand-black/40 text-xs">
+              <p className="text-[10px] uppercase tracking-[0.2em] font-black text-brand-black/30">
                 {activeProject.elements.length} elements
               </p>
             )}
@@ -48,33 +48,33 @@ export default function DashboardHeader({
         </div>
       </div>
 
-      <div className="flex-1 max-w-md mx-8">
+      <div className="flex-1 max-w-xl mx-12">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-black/40" size={18} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/30" size={16} />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search projects..."
-            className="w-full pl-10 pr-4 py-2 bg-brand-paper border border-brand-border rounded-xl text-brand-black placeholder-brand-black/40 focus:outline-none focus:border-violet-500/50 transition-colors"
+            className="w-full pl-11 pr-4 py-3 bg-white border border-brand-border rounded-full text-brand-black placeholder-brand-black/30 focus:outline-none focus:ring-1 focus:ring-violet-500/30 transition-all shadow-sm"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-3">
         <button
-          className="p-2 rounded-lg hover:bg-brand-black/5 text-brand-black/60 hover:text-brand-black transition-colors"
+          className="p-3 rounded-full hover:bg-white text-brand-black/40 hover:text-brand-black transition-all border border-transparent hover:border-brand-border"
         >
-          <Settings size={20} />
+          <Settings size={18} />
         </button>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center">
-          <User size={16} className="text-white" />
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-cyan-500 flex items-center justify-center shadow-md">
+          <User size={18} className="text-white" />
         </div>
         <button
           onClick={onClose}
-          className="p-2 rounded-lg hover:bg-brand-black/5 text-brand-black/60 hover:text-brand-black transition-colors"
+          className="p-3 rounded-full hover:bg-white text-brand-black/40 hover:text-brand-black transition-all border border-transparent hover:border-brand-border"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
       </div>
     </header>
