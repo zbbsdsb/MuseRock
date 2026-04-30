@@ -3,6 +3,7 @@ import { MemoryService } from '../memory/memory.service';
 import { ApprenticeService } from '../apprentice/apprentice.service';
 import { OasisService } from '../oasis/oasis.service';
 import { HealthService } from '../health/health.service';
+import { CodeExecutionService } from './services/code-execution.service';
 
 export interface JsonRpcRequest {
   jsonrpc: '2.0';
@@ -37,6 +38,7 @@ export class McpService {
     private readonly apprenticeService: ApprenticeService,
     private readonly oasisService: OasisService,
     private readonly healthService: HealthService,
+    private readonly codeExecutionService: CodeExecutionService,
   ) {}
 
   async handleRequest(request: JsonRpcRequest, ip: string): Promise<JsonRpcResponse> {
@@ -178,6 +180,26 @@ export class McpService {
           );
         }
         break;
+      case 'execute_code':
+        if (!params || typeof params.code !== 'string') {
+          throw new HttpException(
+            'Invalid params for execute_code. code must be a string.',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        if (params.language && !['javascript', 'typescript'].includes(params.language)) {
+          throw new HttpException(
+            'Invalid params for execute_code. language must be javascript or typescript.',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        if (params.timeout && typeof params.timeout !== 'number') {
+          throw new HttpException(
+            'Invalid params for execute_code. timeout must be a number.',
+            HttpStatus.BAD_REQUEST,
+          );
+        }
+        break;
     }
   }
 
@@ -239,6 +261,8 @@ export class McpService {
         return this.deleteJob(params);
       case 'delete_memory':
         return this.deleteMemory(params);
+      case 'execute_code':
+        return this.executeCode(params);
       case 'get_health_status':
         return this.getHealthStatus();
       default:
@@ -345,6 +369,15 @@ export class McpService {
     id: string;
   }): Promise<any> {
     return this.memoryService.deleteMemory(params.id);
+  }
+
+  private async executeCode(params: {
+    code: string;
+    language?: 'javascript' | 'typescript';
+    timeout?: number;
+    memoryLimit?: number;
+  }): Promise<any> {
+    return this.codeExecutionService.executeCode(params);
   }
 
   private async getHealthStatus(): Promise<any> {
