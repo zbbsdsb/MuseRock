@@ -1,26 +1,23 @@
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  thumbnail?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  lastOpenedAt: Date;
-  isFavorite: boolean;
-  elements: ProjectElement[];
-  notes: Note[];
-  settings: ProjectSettings;
-}
+export type {
+  Project,
+  ProjectMetadata,
+  ProjectSettings,
+  ProjectTemplate,
+  ProjectElement,
+  Note,
+  CreateProjectDTO,
+  UpdateProjectDTO,
+  ProjectFilters,
+  ListOptions,
+  ProjectList,
+} from '../types/project';
 
-export interface Note {
-  id: string;
-  content: string;
-  tags: string[];
-  linkedElements: string[];
-  status: 'draft' | 'active' | 'archived';
-  createdAt: Date;
-  updatedAt: Date;
-}
+export {
+  DEFAULT_PROJECT_SETTINGS,
+  DEFAULT_PROJECT_METADATA,
+  PROJECT_TEMPLATES,
+  createProject,
+} from '../types/project';
 
 export interface InspirationCard {
   id: string;
@@ -31,17 +28,4 @@ export interface InspirationCard {
   incubationStatus: 'new' | 'developing' | 'ready';
   linkedElements: string[];
   createdAt: Date;
-}
-
-export interface ProjectElement {
-  id: string;
-  type: 'document' | 'canvas' | 'card' | 'image';
-  name: string;
-  content: any;
-  order: number;
-}
-
-export interface ProjectSettings {
-  isPublic: boolean;
-  allowComments: boolean;
 }

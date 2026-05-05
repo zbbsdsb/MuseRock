@@ -4,7 +4,7 @@ import { Settings, Search, User, X, Plus, Clock, Star, FolderOpen } from 'lucide
 import DashboardHeader from './DashboardHeader';
 import ProjectsOverview from './ProjectsOverview';
 import ProjectDetail from './ProjectDetail';
-import { Project, Note, InspirationCard, ProjectElement } from './types';
+import { Project, Note, InspirationCard, ProjectElement, DEFAULT_PROJECT_SETTINGS, DEFAULT_PROJECT_METADATA } from './types';
 
 export type DashboardView = 'overview' | 'project';
 export type DashboardTab = 'notes' | 'inspiration' | 'structure' | 'settings';
@@ -59,7 +59,7 @@ export default function MuseDashboard({ isOpen, onClose }: MuseDashboardProps) {
 
   const handleCreateProject = (name: string) => {
     const newProject: Project = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       name,
       description: '',
       thumbnail: '',
@@ -67,9 +67,11 @@ export default function MuseDashboard({ isOpen, onClose }: MuseDashboardProps) {
       updatedAt: new Date(),
       lastOpenedAt: new Date(),
       isFavorite: false,
+      isArchived: false,
       elements: [],
       notes: [],
-      settings: { isPublic: false, allowComments: true },
+      settings: DEFAULT_PROJECT_SETTINGS,
+      metadata: DEFAULT_PROJECT_METADATA,
     };
     const updated = [newProject, ...projects];
     setProjects(updated);
