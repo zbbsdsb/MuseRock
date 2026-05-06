@@ -44,11 +44,13 @@ export interface ProjectTemplate {
   settings: Partial<ProjectSettings>;
 }
 
+export type ElementType = 'document' | 'section' | 'chapter' | 'scene' | 'paragraph' | 'list' | 'quote' | 'image' | 'video' | 'link' | 'code' | 'table' | 'divider' | 'canvas' | 'card' | 'audio';
+
 export interface ProjectElement {
   id: string;
-  type: 'document' | 'canvas' | 'card' | 'image' | 'audio';
+  type: ElementType;
   name: string;
-  content: unknown;
+  content: string;
   order: number;
   isExpanded: boolean;
   createdAt: Date;
