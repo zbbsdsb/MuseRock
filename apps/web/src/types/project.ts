@@ -21,6 +21,10 @@ export interface ProjectMetadata {
   lastEditSession: string;
   collaboratorCount: number;
   version: number;
+  exportCount: number;
+  lastEditAt: Date;
+  createdAt: Date;
+  createdWith?: string;
 }
 
 export interface ProjectSettings {
@@ -117,6 +121,9 @@ export const DEFAULT_PROJECT_METADATA: ProjectMetadata = {
   lastEditSession: '',
   collaboratorCount: 0,
   version: 1,
+  exportCount: 0,
+  lastEditAt: new Date(),
+  createdAt: new Date(),
 };
 
 export const PROJECT_TEMPLATES: ProjectTemplate[] = [
@@ -210,5 +217,65 @@ export function createProject(data: CreateProjectDTO): Project {
     })),
     settings: { ...DEFAULT_PROJECT_SETTINGS, ...template?.settings },
     metadata: { ...DEFAULT_PROJECT_METADATA },
+  };
+}
+
+export function createProjectFromTemplate(
+  template: ProjectTemplate,
+  projectName: string,
+  description: string = ''
+): Project {
+  const now = new Date();
+  const elements: ProjectElement[] = template.elements.map((el, i) => ({
+    id: `el-${i}-${now.getTime()}`,
+    type: el.type as ElementType,
+    name: el.name || `New ${el.type}`,
+    content: el.content || '',
+    order: el.order || i,
+    isExpanded: true,
+    createdAt: now,
+    updatedAt: now
+  }));
+
+  const notes: Note[] = (template.notes || []).map((note, i) => ({
+    id: `note-${i}-${now.getTime()}`,
+    content: note.content || '',
+    status: (note.status || 'draft') as any,
+    tags: note.tags || [],
+    linkedElements: [],
+    createdAt: now,
+    updatedAt: now
+  }));
+
+  return {
+    id: `project-${now.getTime()}`,
+    name: projectName,
+    description,
+    createdAt: now,
+    updatedAt: now,
+    lastOpenedAt: now,
+    isFavorite: false,
+    isArchived: false,
+    elements,
+    notes,
+    settings: { ...DEFAULT_PROJECT_SETTINGS, ...template.settings },
+    metadata: { 
+      ...DEFAULT_PROJECT_METADATA, 
+      createdWith: template.id,
+      createdAt: now,
+      lastEditAt: now
+    }
+  };
+}
+
+export interface ProjectExport {
+  version: '1.0';
+  exportedAt: string;
+  project: {
+    name: string;
+    description: string;
+    settings: ProjectSettings;
+    elements: ProjectElement[];
+    notes: Note[];
   };
 }
