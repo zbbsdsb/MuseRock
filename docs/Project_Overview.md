@@ -44,9 +44,18 @@ MuseRock is a creative assistance tool designed to help users with various creat
 
 ### 4. MCP Gateway
 - **JSON-RPC Protocol**: Standardized API communication
+- **WebSocket Support**: Real-time bidirectional communication
 - **Batch Request Processing**: Efficient handling of multiple requests
 - **Rate Limiting**: Protection against API abuse
 - **Comprehensive Error Handling**: Detailed error reporting and handling
+- **Plugin System**: Extensible plugin architecture with validation
+- **Audit Logging**: Comprehensive operation tracking for compliance
+- **Method Handlers**: 
+  - `search_memory`: Search across memory layers
+  - `create_apprentice_job`: Create apprentice agent jobs
+  - `fetch_bio_asset`: Retrieve biological assets from OasisBio
+  - `generate_content`: Generate AI content
+  - `manage_prompts`: CRUD operations for prompt templates
 
 ### 5. Observability Stack
 - **Logging**: Comprehensive system logging

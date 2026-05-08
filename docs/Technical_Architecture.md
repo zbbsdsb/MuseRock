@@ -13,15 +13,21 @@ flowchart TD
         AuthUI[Authentication UI]
         MemoryUI[Memory Management UI]
         ApprenticeUI[Apprentice Management UI]
+        OasisUI[OasisBio Integration UI]
     end
 
     subgraph Backend
         BFF[NestJS BFF\nBackend for Frontend]
         AuthService[Authentication Service]
         MemoryService[Memory Service]
+        AIService[AI Service]
+        PromptRegistry[Prompt Registry]
+        ModelAdapter[Model Adapter Factory]
         ApprenticeService[Apprentice Service]
         MCPService[MCP Gateway]
+        MCPSocket[MCP WebSocket Gateway]
         OasisService[OasisBio Adapter]
+        OasisOAuthService[Oasis OAuth Service]
         ComplianceService[Compliance Service]
         ObservabilityService[Observability Service]
     end
@@ -29,7 +35,6 @@ flowchart TD
     subgraph External Services
         OpenAI[OpenAI API]
         Gemini[Google Gemini API]
-        Anthropic[Anthropic API]
         OasisBio[OasisBio API]
         Firebase[Firebase Auth]
     end
@@ -40,45 +45,63 @@ flowchart TD
         PgVector[pgvector\nVector Search]
     end
 
+    subgraph Observability
+        Prometheus[Prometheus Monitoring]
+        AlertManager[AlertManager]
+    end
+
     WebApp --> AuthUI
     WebApp --> MemoryUI
     WebApp --> ApprenticeUI
+    WebApp --> OasisUI
 
     AuthUI --> BFF
     MemoryUI --> BFF
     ApprenticeUI --> BFF
+    OasisUI --> BFF
 
     BFF --> AuthService
     BFF --> MemoryService
     BFF --> ApprenticeService
     BFF --> MCPService
+    BFF --> OasisService
 
-    AuthService --> OasisService
     AuthService --> Firebase
+    AuthService --> OasisOAuthService
 
     MemoryService --> PostgreSQL
     MemoryService --> PgVector
     MemoryService --> Redis
 
-    ApprenticeService --> OpenAI
-    ApprenticeService --> Gemini
-    ApprenticeService --> Anthropic
+    AIService --> PromptRegistry
+    AIService --> ModelAdapter
+    ModelAdapter --> OpenAI
+    ModelAdapter --> Gemini
+
+    ApprenticeService --> AIService
     ApprenticeService --> PostgreSQL
 
     MCPService --> MemoryService
     MCPService --> ApprenticeService
     MCPService --> OasisService
+    MCPSocket --> MCPService
 
-    OasisService --> OasisBio
+    OasisService --> OasisOAuthService
+    OasisOAuthService --> OasisBio
 
     ComplianceService --> MemoryService
     ComplianceService --> ApprenticeService
+    ComplianceService --> AIService
 
     ObservabilityService --> BFF
     ObservabilityService --> AuthService
     ObservabilityService --> MemoryService
     ObservabilityService --> ApprenticeService
     ObservabilityService --> MCPService
+    ObservabilityService --> AIService
+
+    Prometheus --> ObservabilityService
+    AlertManager --> Prometheus
 ```
 
 ## Component Details
@@ -170,6 +193,35 @@ flowchart TD
   - Request validation and rate limiting
   - Batch request processing
   - Error handling and reporting
+  - WebSocket support for real-time communication
+  - Plugin management and validation
+  - Audit logging and compliance tracking
+
+#### MCP WebSocket Gateway
+- **Responsibilities**:
+  - Real-time bidirectional communication
+  - WebSocket connection management
+  - RPC request handling over WebSocket
+  - Batch request processing
+  - Connection monitoring and metrics
+
+#### MCP Handlers
+- **Available Handlers**:
+  - `search_memory`: Search across memory layers
+  - `create_apprentice_job`: Create apprentice agent jobs
+  - `fetch_bio_asset`: Retrieve biological assets from OasisBio
+  - `generate_content`: Generate AI content
+  - `manage_prompts`: CRUD operations for prompt templates
+
+#### MCP Middleware
+- **Authentication Middleware**: Token validation and user extraction
+- **Rate Limiting Middleware**: Request rate control per user/endpoint
+- **Validation Middleware**: Request schema validation
+
+#### MCP Plugin System
+- **Plugin Manager**: Install, enable, disable, and uninstall plugins
+- **Plugin Validator**: Validate plugin manifests and permissions
+- **Audit Service**: Track and log all MCP operations
 
 #### OasisBio Adapter
 - **Responsibilities**:

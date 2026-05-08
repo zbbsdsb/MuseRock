@@ -318,6 +318,17 @@ This document provides detailed information about the MuseRock API, including en
 
 ## MCP Gateway
 
+### WebSocket Connection
+
+The MCP Gateway supports WebSocket connections for real-time communication.
+
+**Endpoint**: `ws://localhost:3001/mcp`
+
+**Subscriptions**:
+- `rpc`: Send JSON-RPC requests
+- `batch`: Send batch JSON-RPC requests
+- `list_methods`: Get list of available methods
+
 ### JSON-RPC Format
 
 ```json
@@ -332,38 +343,175 @@ This document provides detailed information about the MuseRock API, including en
 }
 ```
 
+### Batch Requests
+
+```json
+[
+  {
+    "jsonrpc": "2.0",
+    "method": "search_memory",
+    "params": { "query": "renewable energy" },
+    "id": "1"
+  },
+  {
+    "jsonrpc": "2.0",
+    "method": "generate_content",
+    "params": { "prompt": "Hello" },
+    "id": "2"
+  }
+]
+```
+
 ### Supported Methods
 
 1. **search_memory**
+   - **Description**: Search across memory layers
    - **Parameters**:
-     - `query`: Search query string
-     - `options`: Optional search options
-   - **Response**: Array of search results
+     - `query`: Search query string (required)
+     - `layers`: Array of memory layers to search (working, episodic, knowledge, contextual, compliance)
+     - `projectId`: Filter by project ID
+     - `limit`: Maximum number of results (default: 20)
+     - `offset`: Offset for pagination
+     - `sensitivity`: Array of sensitivity levels (public, restricted, private)
+   - **Response**:
+     ```json
+     {
+       "results": [
+         {
+           "id": "memory-id",
+           "content": "Memory content",
+           "layer": "episodic",
+           "score": 0.9,
+           "createdAt": "2024-01-01T00:00:00Z"
+         }
+       ],
+       "total": 10,
+       "took": 45
+     }
+     ```
 
 2. **create_apprentice_job**
+   - **Description**: Create a new apprentice job
    - **Parameters**:
-     - `apprenticeId`: Apprentice ID
-     - `task`: Task description
-     - `parameters`: Task parameters
-   - **Response**: Job object
+     - `agentType`: Agent type (researcher, writer, analyst, reviewer) (required)
+     - `task`: Task description (required)
+     - `context`: Optional context object
+       - `projectId`: Project ID
+       - `memoryIds`: Array of memory IDs
+     - `budget`: Token budget
+     - `timeout`: Timeout in milliseconds
+     - `reviewMode`: Enable review mode
+   - **Response**:
+     ```json
+     {
+       "jobId": "job-id",
+       "status": "pending",
+       "queueName": "apprentice-standard",
+       "estimatedCompletion": "2024-01-01T00:01:00Z",
+       "budgetRemaining": 1000
+     }
+     ```
 
 3. **fetch_bio_asset**
+   - **Description**: Fetch biological asset from OasisBio
    - **Parameters**:
-     - `assetId`: Asset ID
-     - `accessToken`: OasisBio access token
-   - **Response**: Asset data
+     - `assetId`: Asset ID (required)
+     - `format`: Output format (raw, processed, visualization)
+     - `transformations`: Optional transformations
+       - `resize`: { width: number, height: number }
+       - `format`: Output format string
+   - **Response**:
+     ```json
+     {
+       "assetId": "asset-id",
+       "name": "Asset Name",
+       "type": "image",
+       "content": "base64-encoded-content",
+       "metadata": {
+         "size": 1024,
+         "sensitivity": "normal"
+       },
+       "downloadUrl": "https://api.muserock.io/assets/asset-id/download"
+     }
+     ```
 
-4. **get_user_profile**
+4. **generate_content**
+   - **Description**: Generate AI content
+   - **Parameters**:
+     - `prompt`: Input prompt (required)
+     - `model`: Model name (gemini-1.5-pro, claude-3-opus, gpt-4)
+     - `parameters`: Optional generation parameters
+       - `temperature`: Temperature (0-1)
+       - `maxTokens`: Maximum tokens
+       - `topP`: Top P sampling
+       - `frequencyPenalty`: Frequency penalty
+     - `stream`: Enable streaming
+     - `memoryContext`: Memory context options
+       - `projectId`: Project ID
+       - `includeMemory`: Include memory context
+   - **Response**:
+     ```json
+     {
+       "content": "Generated content",
+       "model": "gpt-4",
+       "usage": {
+         "promptTokens": 50,
+         "completionTokens": 200,
+         "totalTokens": 250
+       },
+       "latency": 1500,
+       "citations": []
+     }
+     ```
+
+5. **manage_prompts**
+   - **Description**: Manage prompt templates (CRUD operations)
+   - **Parameters**:
+     - `action`: Action to perform (create, read, update, delete, list) (required)
+     - `promptId`: Prompt template ID (required for read, update, delete)
+     - `prompt`: Prompt template data (required for create, update)
+       - `name`: Template name
+       - `template`: Template content
+       - `category`: Category (writing, research, analysis, creative)
+       - `variables`: Array of variable names
+       - `description`: Optional description
+     - `filters`: Filter options for list action
+       - `category`: Filter by category
+       - `search`: Search string
+   - **Response**:
+     ```json
+     {
+       "prompts": [...],
+       "total": 10,
+       "prompt": {
+         "id": "prompt-id",
+         "name": "Researcher",
+         "template": "...",
+         "category": "research",
+         "variables": ["topic", "depth"],
+         "createdAt": "2024-01-01T00:00:00Z",
+         "usageCount": 100
+       },
+       "success": true
+     }
+     ```
+
+6. **list_methods**
+   - **Description**: List all available MCP methods
+   - **Parameters**: None
+   - **Response**: Array of method names
+
+7. **get_user_profile**
    - **Parameters**:
      - `userId`: User ID
      - `accessToken`: OasisBio access token
    - **Response**: User profile data
 
-5. **list_apprentices**
+8. **list_apprentices**
    - **Parameters**: None
    - **Response**: Array of apprentices
 
-6. **create_apprentice**
+9. **create_apprentice**
    - **Parameters**:
      - `name`: Apprentice name
      - `role`: Apprentice role
