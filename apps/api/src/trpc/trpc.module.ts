@@ -1,17 +1,11 @@
 import { Module } from '@nestjs/common';
-import { appRouter } from './app.router';
-import { AIService } from '../ai/ai.service';
-import { MemoryService } from '../memory/memory.service';
+import { APP_ROUTER_PROVIDER } from './trpc.providers';
+import { AIModule } from '../ai/ai.module';
+import { MemoryModule } from '../memory/memory.module';
 
 @Module({
-  providers: [
-    {
-      provide: 'APP_ROUTER',
-      useValue: appRouter,
-    },
-    AIService,
-    MemoryService,
-  ],
-  exports: ['APP_ROUTER'],
+  imports: [AIModule, MemoryModule],
+  providers: [APP_ROUTER_PROVIDER],
+  exports: [APP_ROUTER_PROVIDER],
 })
 export class TrpcModule {}

@@ -1,64 +1,94 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { OpenAI } from 'openai';
+import { ModelAdapterFactory, ProviderType } from './adapters/adapter.factory';
+import { ModelOptions, ModelResponse } from './adapters/base.adapter';
+
+export interface GenerationRequest {
+  prompt: string;
+  role: string;
+  provider?: ProviderType;
+  options?: ModelOptions;
+  context?: Record<string, any>;
+}
 
 @Injectable()
 export class AIService {
-  private openai: OpenAI;
+  constructor(private adapterFactory: ModelAdapterFactory) {}
 
-  constructor() {
-    // In a real implementation, we would get the API key from environment variables
-    const apiKey = process.env.OPENAI_API_KEY || '';
-    if (!apiKey) {
-      throw new HttpException(
-        'OpenAI API key is not configured',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-    this.openai = new OpenAI({ apiKey });
-  }
-
-  async generateContent(prompt: string, role: string, parameters: Record<string, any> = {}): Promise<any> {
+  async generateContent(request: GenerationRequest): Promise<ModelResponse> {
+    const { prompt, role, provider = 'openai', options = {} } = request;
+    
+    const systemPrompt = this.getSystemPromptForRole(role, request.context);
+    
     try {
-      const systemPrompt = this.getSystemPromptForRole(role);
-      
-      const response = await this.openai.chat.completions.create({
-        model: parameters.model || 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt },
-        ],
-        temperature: parameters.temperature || 0.7,
-        max_tokens: parameters.maxTokens || 1000,
-      });
-
-      return {
-        content: response.choices[0].message.content,
-        tokensUsed: {
-          prompt: response.usage?.prompt_tokens || 0,
-          completion: response.usage?.completion_tokens || 0,
-          total: response.usage?.total_tokens || 0,
-        },
-      };
+      return await this.adapterFactory.generateContent(
+        provider,
+        prompt,
+        systemPrompt,
+        options,
+      );
     } catch (error) {
       throw new HttpException(
-        `Error generating content: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
   }
 
-  private getSystemPromptForRole(role: string): string {
-    switch (role) {
-      case 'researcher':
-        return `You are an expert researcher. Your task is to provide comprehensive, accurate, and well-structured research on the given topic. Include relevant sources, key findings, and a clear summary.`;
-      case 'writer':
-        return `You are a professional writer. Your task is to create engaging, well-structured, and grammatically correct content based on the given prompt. Adapt your style to the requested format and tone.`;
-      case 'designer':
-        return `You are a creative designer. Your task is to generate innovative design concepts, style guidelines, and visual descriptions based on the given requirements.`;
-      case 'musician':
-        return `You are a talented musician and composer. Your task is to create music concepts, genre recommendations, and musical descriptions based on the given prompt.`;
-      default:
-        return `You are a helpful assistant. Your task is to provide clear, concise, and accurate responses to the given prompt.`;
+  async generateStructuredContent(request: GenerationRequest): Promise<ModelResponse> {
+    return this.generateContent({
+      ...request,
+      options: {
+        ...request.options,
+        responseFormat: 'json',
+      },
+    });
+  }
+
+  private getSystemPromptForRole(role: string, context?: Record<string, any>): string {
+    const basePrompts: Record<string, string> = {
+      researcher: `You are MuseRock's Researcher. Your responsibilities are:
+1. Explore topics broadly first, then narrow down
+2. Identify high-value inspiration directions
+3. Formulate key research questions
+4. Suggest credible source types
+5. Distinguish between facts, assumptions, and unverified clues
+6. Always output in the specified JSON format`,
+      
+      writer: `You are MuseRock's Writer. Your responsibilities are:
+1. Transform briefs, research packages, and feedback into readable drafts
+2. Maintain consistent voice, pacing, and length targets
+3. Cite sources properly when using research references
+4. Include summary, body, open questions, and change log in output
+5. Always output in the specified JSON format`,
+      
+      designer: `You are MuseRock's Designer. Your responsibilities are:
+1. Convert textual themes into visual directions
+2. Provide color palettes, typography, and layout principles
+3. Distinguish between visual concepts, design tokens, and risks
+4. Never overwrite Writer's narrative intent
+5. Always output in the specified JSON format`,
+      
+      musician: `You are MuseRock's Musician. Your responsibilities are:
+1. Convert emotional beats and structure into musical concepts
+2. Provide mood arcs, tempo ranges, and instrumentation suggestions
+3. Create cue sheets for different sections
+4. Ensure musical direction aligns with visual and narrative goals
+5. Always output in the specified JSON format`,
+    };
+
+    const basePrompt = basePrompts[role] || basePrompts.writer;
+    
+    if (context) {
+      const contextStr = Object.entries(context)
+        .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
+        .join('\n');
+      return `${basePrompt}\n\nAdditional context:\n${contextStr}`;
     }
+    
+    return basePrompt;
+  }
+
+  getAvailableProviders(): ProviderType[] {
+    return this.adapterFactory.getAvailableProviders();
   }
 }
