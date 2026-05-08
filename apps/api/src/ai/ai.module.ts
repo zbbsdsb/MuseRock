@@ -3,14 +3,16 @@ import { AIService } from './ai.service';
 import { ModelAdapterFactory } from './adapters/adapter.factory';
 import { OpenAIAdapter } from './adapters/openai.adapter';
 import { GeminiAdapter } from './adapters/gemini.adapter';
+import { PromptRegistryService } from './prompt-registry.service';
 
 @Module({
   providers: [
     ModelAdapterFactory,
     OpenAIAdapter,
     GeminiAdapter,
+    PromptRegistryService,
     AIService,
   ],
-  exports: [AIService],
+  exports: [AIService, PromptRegistryService],
 })
 export class AIModule {}

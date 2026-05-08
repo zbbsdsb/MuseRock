@@ -1,6 +1,7 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ModelAdapterFactory, ProviderType } from './adapters/adapter.factory';
 import { ModelOptions, ModelResponse } from './adapters/base.adapter';
+import { PromptRegistryService, PromptTemplate } from './prompt-registry.service';
 
 export interface GenerationRequest {
   prompt: string;
@@ -8,17 +9,40 @@ export interface GenerationRequest {
   provider?: ProviderType;
   options?: ModelOptions;
   context?: Record<string, any>;
+  templateId?: string;
+  variables?: Record<string, string>;
+}
+
+export interface TemplateGenerationRequest {
+  templateId: string;
+  variables: Record<string, string>;
+  userInput: string;
+  provider?: ProviderType;
+  options?: ModelOptions;
+  context?: Record<string, any>;
 }
 
 @Injectable()
 export class AIService {
-  constructor(private adapterFactory: ModelAdapterFactory) {}
+  constructor(
+    private adapterFactory: ModelAdapterFactory,
+    private promptRegistry: PromptRegistryService,
+  ) {}
 
   async generateContent(request: GenerationRequest): Promise<ModelResponse> {
-    const { prompt, role, provider = 'openai', options = {} } = request;
-    
-    const systemPrompt = this.getSystemPromptForRole(role, request.context);
-    
+    const { prompt, role, provider = 'openai', options = {}, templateId, variables } = request;
+
+    let systemPrompt: string;
+
+    if (templateId && variables) {
+      systemPrompt = this.promptRegistry.renderPrompt(templateId, {
+        variables,
+        context: request.context,
+      });
+    } else {
+      systemPrompt = this.getSystemPromptForRole(role, request.context);
+    }
+
     try {
       return await this.adapterFactory.generateContent(
         provider,
@@ -42,6 +66,42 @@ export class AIService {
         responseFormat: 'json',
       },
     });
+  }
+
+  async generateFromTemplate(request: TemplateGenerationRequest): Promise<ModelResponse> {
+    const { templateId, variables, userInput, provider = 'openai', options = {}, context } = request;
+
+    const missingVars = this.promptRegistry.validateVariables(templateId, variables);
+    if (missingVars.length > 0) {
+      throw new HttpException(
+        `Missing required variables: ${missingVars.join(', ')}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const systemPrompt = this.promptRegistry.renderPrompt(templateId, {
+      variables,
+      context,
+    });
+
+    const schema = this.promptRegistry.getSchema(templateId);
+    
+    try {
+      return await this.adapterFactory.generateContent(
+        provider,
+        userInput,
+        systemPrompt,
+        {
+          ...options,
+          responseFormat: 'json',
+        },
+      );
+    } catch (error) {
+      throw new HttpException(
+        `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   private getSystemPromptForRole(role: string, context?: Record<string, any>): string {
@@ -90,5 +150,17 @@ export class AIService {
 
   getAvailableProviders(): ProviderType[] {
     return this.adapterFactory.getAvailableProviders();
+  }
+
+  getPromptTemplates(): PromptTemplate[] {
+    return this.promptRegistry.getAllPrompts();
+  }
+
+  getPromptTemplateById(id: string): PromptTemplate | undefined {
+    return this.promptRegistry.getPromptById(id);
+  }
+
+  createPromptTemplate(prompt: Omit<PromptTemplate, 'id' | 'createdAt' | 'updatedAt' | 'version'>): PromptTemplate {
+    return this.promptRegistry.createPrompt(prompt);
   }
 }
