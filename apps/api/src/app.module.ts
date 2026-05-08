@@ -10,6 +10,9 @@ import { ObservabilityMiddleware } from './observability/observability.service';
 import { ComplianceModule } from './compliance/compliance.module';
 import { HealthModule } from './health/health.module';
 import { AIModule } from './ai/ai.module';
+import { TrpcModule } from './trpc/trpc.module';
+import { trpcMiddlewareFactory } from './trpc/trpc.express';
+import { APP_ROUTER_PROVIDER } from './trpc/trpc.providers';
 
 @Module({
   imports: [
@@ -28,9 +31,10 @@ import { AIModule } from './ai/ai.module';
     ComplianceModule,
     HealthModule,
     AIModule,
+    TrpcModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [APP_ROUTER_PROVIDER],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

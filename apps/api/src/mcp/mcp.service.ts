@@ -281,7 +281,11 @@ export class McpService {
       limit?: number;
     };
   }): Promise<any> {
-    return this.memoryService.searchMemory(params.query, params.options);
+    return this.memoryService.searchMemory({
+      userId: 'mcp-user',
+      query: params.query,
+      ...params.options,
+    });
   }
 
   private async createApprenticeJob(params: {

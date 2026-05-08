@@ -47,13 +47,14 @@ export class OasisService {
 
       // Store profile in memory for future use
       await this.memoryService.storeMemory({
+        userId,
+        type: 'episodic',
         content: JSON.stringify(profile),
         metadata: {
-          type: 'user_profile',
-          user_id: userId,
+          profile_type: 'user_profile',
           source: 'oasisbio',
         },
-        sensitivity: 'private', // User profiles are private
+        sensitivity: 'private',
       });
 
       return profile;
@@ -73,9 +74,10 @@ export class OasisService {
 
       // Store asset in memory for future use
       await this.memoryService.storeMemory({
+        userId: 'oasis-user',
+        type: 'knowledge',
         content: JSON.stringify(asset),
         metadata: {
-          type: 'asset',
           asset_id: assetId,
           asset_type: asset.type,
           source: 'oasisbio',
@@ -105,9 +107,10 @@ export class OasisService {
       // Store assets in memory for future use
       for (const asset of assets) {
         await this.memoryService.storeMemory({
+          userId: 'oasis-user',
+          type: 'knowledge',
           content: JSON.stringify(asset),
           metadata: {
-            type: 'asset',
             asset_id: asset.id,
             asset_type: asset.type,
             source: 'oasisbio',
@@ -136,13 +139,14 @@ export class OasisService {
 
       // Store recommendations in memory for future use
       await this.memoryService.storeMemory({
+        userId,
+        type: 'contextual',
         content: JSON.stringify(recommendations),
         metadata: {
-          type: 'recommendations',
-          user_id: userId,
+          rec_type: 'recommendations',
           source: 'oasisbio',
         },
-        sensitivity: 'restricted', // Recommendations may contain personal information
+        sensitivity: 'restricted',
       });
 
       return recommendations;
