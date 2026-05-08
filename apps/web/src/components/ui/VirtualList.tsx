@@ -20,6 +20,7 @@ export function VirtualList<T>({ items, itemHeight, renderItem, containerClassNa
   return (
     <div
       ref={parentRef}
+      role="region"
       className={`relative overflow-y-auto ${containerClassName}`}
       style={{
         height: virtualizer.totalSize,
