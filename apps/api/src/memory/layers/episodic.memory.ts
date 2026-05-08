@@ -43,6 +43,10 @@ export class EpisodicMemory {
     return this.memoryStore.delete(id);
   }
 
+  async getAll(): Promise<MemoryItem[]> {
+    return Array.from(this.memoryStore.values());
+  }
+
   async getByTimeRange(startTime: number, endTime: number): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
 

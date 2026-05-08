@@ -57,6 +57,10 @@ export class KnowledgeMemory {
     return false;
   }
 
+  async getAll(): Promise<MemoryItem[]> {
+    return Array.from(this.memoryStore.values());
+  }
+
   async getByCategory(category: string): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
 

@@ -51,6 +51,10 @@ export class ComplianceMemory {
     return this.memoryStore.delete(id);
   }
 
+  async getAll(): Promise<MemoryItem[]> {
+    return Array.from(this.memoryStore.values());
+  }
+
   async getBySensitivity(sensitivity: 'restricted' | 'private'): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
 

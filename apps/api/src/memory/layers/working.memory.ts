@@ -52,6 +52,10 @@ export class WorkingMemory {
     return this.memoryStore.delete(id);
   }
 
+  async getAll(): Promise<MemoryItem[]> {
+    return Array.from(this.memoryStore.values());
+  }
+
   private trimMemory(): void {
     // Convert map to array and sort by timestamp (oldest first)
     const items = Array.from(this.memoryStore.entries())

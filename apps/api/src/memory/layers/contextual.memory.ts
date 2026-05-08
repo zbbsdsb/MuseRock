@@ -47,6 +47,10 @@ export class ContextualMemory {
     return this.memoryStore.delete(id);
   }
 
+  async getAll(): Promise<MemoryItem[]> {
+    return Array.from(this.memoryStore.values());
+  }
+
   async getByContext(context: string): Promise<MemoryItem[]> {
     const results: MemoryItem[] = [];
     const contextLower = context.toLowerCase();

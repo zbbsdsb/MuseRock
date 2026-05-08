@@ -196,11 +196,11 @@ export class ApprenticeService {
 
   private async executeTask(apprentice: Apprentice, job: Job): Promise<any> {
     // Use AI service to execute the task based on apprentice role
-    const result = await this.aiService.generateContent(
-      job.task,
-      apprentice.role,
-      job.parameters
-    );
+    const result = await this.aiService.generateContent({
+      prompt: job.task,
+      role: apprentice.role,
+      options: job.parameters as any,
+    });
 
     // Format the result based on the apprentice role
     switch (apprentice.role) {
