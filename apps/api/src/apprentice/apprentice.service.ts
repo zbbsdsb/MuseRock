@@ -165,7 +165,7 @@ export class ApprenticeService {
       job.error = 'Apprentice not found';
       job.completedAt = new Date();
       await this.jobRepository.save(job);
-      this.observabilityService.recordApprenticeJob(apprentice?.role || 'unknown', 'failed');
+      this.observabilityService.recordApprenticeJob('unknown', 'failed');
       return;
     }
 

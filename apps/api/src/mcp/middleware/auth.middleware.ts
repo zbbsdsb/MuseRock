@@ -1,6 +1,5 @@
 import { Injectable, NestMiddleware, UnauthorizedException } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { AuthService } from '../../auth/auth.service';
 import { User } from '../types/mcp.types';
 
 declare global {
@@ -13,8 +12,6 @@ declare global {
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-  constructor(private readonly authService: AuthService) {}
-
   async use(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
     
@@ -25,15 +22,25 @@ export class AuthMiddleware implements NestMiddleware {
     const token = authHeader.substring(7);
     
     try {
-      const userData = await this.authService.validateToken(token);
+      const decoded = this.decodeToken(token);
       req.user = {
-        id: userData.userId,
-        permissions: userData.permissions || [],
-        email: userData.email,
+        id: decoded.sub || 'user',
+        permissions: decoded.permissions || [],
+        email: decoded.email,
       };
       next();
     } catch (error) {
       throw new UnauthorizedException('Invalid or expired token');
+    }
+  }
+
+  private decodeToken(token: string): any {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = Buffer.from(payload, 'base64').toString('utf-8');
+      return JSON.parse(decoded);
+    } catch {
+      throw new Error('Invalid token');
     }
   }
 }

@@ -83,6 +83,7 @@ export interface CreateApprenticeJobResult {
 
 export interface FetchBioAssetParams {
   assetId: string;
+  accessToken?: string;
   format?: 'raw' | 'processed' | 'visualization';
   transformations?: {
     resize?: { width: number; height: number };
@@ -93,14 +94,64 @@ export interface FetchBioAssetParams {
 export interface FetchBioAssetResult {
   assetId: string;
   name: string;
-  type: 'image' | 'video' | 'text' | '3d';
+  type: 'image' | 'video' | 'text' | '3d' | 'audio' | 'document';
   content: string;
-  metadata: {
-    dimensions?: { width: number; height: number };
-    size: number;
-    sensitivity: 'normal' | 'sensitive';
-  };
+  metadata: Record<string, unknown>;
   downloadUrl: string;
+}
+
+export interface SearchBioAssetsParams {
+  query: string;
+  accessToken?: string;
+  type?: 'image' | 'audio' | 'video' | 'document';
+  limit?: number;
+  sensitivity?: ('public' | 'restricted' | 'private')[];
+}
+
+export interface SearchBioAssetsResult {
+  results: {
+    assetId: string;
+    name: string;
+    type: 'image' | 'audio' | 'video' | 'document';
+    description: string;
+    url: string;
+    sensitivity: 'public' | 'restricted' | 'private';
+    tags: string[];
+  }[];
+  total: number;
+}
+
+export interface GetCharactersParams {
+  accessToken?: string;
+}
+
+export interface GetCharactersResult {
+  characters: {
+    id: string;
+    name: string;
+    slug: string;
+    coverImage?: string;
+    identityMode?: string;
+  }[];
+  total: number;
+}
+
+export interface GetCharacterDetailParams {
+  characterId: string;
+  accessToken?: string;
+}
+
+export interface GetCharacterDetailResult {
+  id?: string;
+  name?: string;
+  slug?: string;
+  coverImage?: string;
+  identityMode?: string;
+  abilities?: any[];
+  worlds?: any[];
+  eras?: any[];
+  references?: any[];
+  error?: string;
 }
 
 export interface GenerateContentParams {

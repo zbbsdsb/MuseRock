@@ -13,7 +13,7 @@ export class ContentHandler implements MCPHandler {
   }
 
   async execute(params: Record<string, unknown>): Promise<GenerateContentResult> {
-    const genParams = params as GenerateContentParams;
+    const genParams = params as unknown as GenerateContentParams;
     const startTime = Date.now();
 
     const provider = this.mapModelToProvider(genParams.model);

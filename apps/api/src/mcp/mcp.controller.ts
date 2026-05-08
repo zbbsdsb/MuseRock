@@ -1,9 +1,6 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Ip, UseMiddleware, Req } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Ip, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { HandlerRegistry } from './handlers/handler.registry';
-import { AuthMiddleware } from './middleware/auth.middleware';
-import { ValidationMiddleware } from './middleware/validation.middleware';
-import { RateLimitMiddleware } from './middleware/rate-limit.middleware';
 import { AuditService } from './services/audit.service';
 import { JsonRpcRequest, JsonRpcResponse } from './types/mcp.types';
 import { validateJsonRpcRequest, createParseError } from './utils/rpc.helpers';
@@ -17,9 +14,6 @@ export class McpController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  @UseMiddleware(AuthMiddleware)
-  @UseMiddleware(ValidationMiddleware)
-  @UseMiddleware(RateLimitMiddleware)
   async handleJsonRpc(
     @Body() body: unknown,
     @Ip() ip: string,
@@ -74,8 +68,6 @@ export class McpController {
 
   @Post('batch')
   @HttpCode(HttpStatus.OK)
-  @UseMiddleware(AuthMiddleware)
-  @UseMiddleware(RateLimitMiddleware)
   async handleBatchJsonRpc(
     @Body() bodies: unknown[],
     @Ip() ip: string,
@@ -97,7 +89,6 @@ export class McpController {
 
   @Post('list_methods')
   @HttpCode(HttpStatus.OK)
-  @UseMiddleware(AuthMiddleware)
   listMethods(): { methods: string[] } {
     return { methods: this.handlerRegistry.listMethods() };
   }

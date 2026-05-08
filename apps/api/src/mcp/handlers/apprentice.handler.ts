@@ -13,7 +13,7 @@ export class ApprenticeHandler implements MCPHandler {
   }
 
   async execute(params: Record<string, unknown>): Promise<CreateApprenticeJobResult> {
-    const jobParams = params as CreateApprenticeJobParams;
+    const jobParams = params as unknown as CreateApprenticeJobParams;
 
     const job = await this.apprenticeService.createJob({
       apprenticeId: jobParams.agentType,

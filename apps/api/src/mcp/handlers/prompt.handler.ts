@@ -12,7 +12,7 @@ export class PromptHandler implements MCPHandler {
   }
 
   async execute(params: Record<string, unknown>): Promise<ManagePromptsResult> {
-    const promptParams = params as ManagePromptsParams;
+    const promptParams = params as unknown as ManagePromptsParams;
 
     switch (promptParams.action) {
       case 'list':
@@ -36,7 +36,7 @@ export class PromptHandler implements MCPHandler {
     let filtered = allPrompts;
     
     if (filters?.category) {
-      filtered = filtered.filter(p => p.category === filters.category);
+      filtered = filtered.filter(p => (p as any).category === filters.category || (p as any).role === filters.category);
     }
     
     if (filters?.search) {
@@ -83,7 +83,7 @@ export class PromptHandler implements MCPHandler {
     const created = this.aiService.createPromptTemplate({
       name: prompt.name,
       template: prompt.template,
-      category: prompt.category as any,
+      role: prompt.category as any,
       variables: prompt.variables,
       description: prompt.description,
     });

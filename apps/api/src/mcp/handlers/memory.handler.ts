@@ -16,7 +16,7 @@ export class MemoryHandler implements MCPHandler {
   }
 
   async execute(params: Record<string, unknown>, user?: { id: string; permissions: string[] }): Promise<SearchMemoryResult> {
-    const searchParams = params as SearchMemoryParams;
+    const searchParams = params as unknown as SearchMemoryParams;
     const startTime = Date.now();
 
     const results = await this.memoryService.searchMemory({
