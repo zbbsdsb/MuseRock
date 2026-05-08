@@ -26,13 +26,13 @@ export class AuthController {
     try {
       const tokens = await this.authService.exchangeCodeForTokens(code, state);
       // Set tokens as httpOnly cookies
-      res.cookie('oasis_access_token', tokens.access_token, {
+      res.cookie('oasis_access_token', tokens.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 3600000, // 1 hour
       });
-      res.cookie('oasis_refresh_token', tokens.refresh_token, {
+      res.cookie('oasis_refresh_token', tokens.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
@@ -54,7 +54,7 @@ export class AuthController {
     try {
       const tokens = await this.authService.refreshTokens(refreshToken);
       // Update cookies
-      res.cookie('oasis_access_token', tokens.access_token, {
+      res.cookie('oasis_access_token', tokens.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',

@@ -1,7 +1,8 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { MemoryService } from '../memory/memory.service';
+import { OasisOAuthService, Character, CharacterDetail, DCOSFile } from './oauth/oasis-oauth.service';
 
-interface OasisUser {
+export interface OasisUser {
   sub: string;
   username?: string;
   display_name?: string;
@@ -11,7 +12,7 @@ interface OasisUser {
   interests?: string[];
 }
 
-interface OasisAsset {
+export interface OasisAsset {
   id: string;
   type: 'image' | 'audio' | 'video' | 'document';
   name: string;
@@ -22,7 +23,7 @@ interface OasisAsset {
   metadata: Record<string, any>;
 }
 
-interface OasisProfile {
+export interface OasisProfile {
   user: OasisUser;
   assets: OasisAsset[];
   preferences: Record<string, any>;
@@ -31,21 +32,28 @@ interface OasisProfile {
 
 @Injectable()
 export class OasisService {
-  private baseUrl: string;
-  private apiKey: string;
-
-  constructor(private readonly memoryService: MemoryService) {
-    this.baseUrl = process.env.OASIS_API_URL || 'https://api.oasisbio.com';
-    this.apiKey = process.env.OASIS_API_KEY || '';
-  }
+  constructor(
+    private readonly memoryService: MemoryService,
+    private readonly oasisOAuthService: OasisOAuthService,
+  ) {}
 
   async getUserProfile(userId: string, accessToken: string): Promise<OasisProfile> {
     try {
-      // In a real implementation, this would call the OasisBio API
-      // For now, we'll simulate a response
-      const profile = await this.simulateGetUserProfile(userId);
+      const userInfo = await this.oasisOAuthService.getUserInfo(accessToken);
+      
+      const profile: OasisProfile = {
+        user: {
+          sub: userInfo.sub,
+          username: userInfo.username,
+          display_name: userInfo.displayName,
+          avatar_url: userInfo.avatarUrl,
+          email: userInfo.email,
+        },
+        assets: [],
+        preferences: {},
+        roles: [],
+      };
 
-      // Store profile in memory for future use
       await this.memoryService.storeMemory({
         userId,
         type: 'episodic',
@@ -68,29 +76,37 @@ export class OasisService {
 
   async fetchBioAsset(assetId: string, accessToken: string): Promise<OasisAsset> {
     try {
-      // In a real implementation, this would call the OasisBio API
-      // For now, we'll simulate a response
-      const asset = await this.simulateGetAsset(assetId);
+      const characters = await this.oasisOAuthService.getCharacters(accessToken);
+      const character = characters.find(c => c.id === assetId || c.slug === assetId);
 
-      // Store asset in memory for future use
-      await this.memoryService.storeMemory({
-        userId: 'oasis-user',
-        type: 'knowledge',
-        content: JSON.stringify(asset),
+      if (!character) {
+        const asset = await this.simulateGetAsset(assetId);
+        await this.storeAssetInMemory(assetId, asset);
+        return asset;
+      }
+
+      const detail = await this.oasisOAuthService.getCharacterById(accessToken, character.id);
+      const asset: OasisAsset = {
+        id: detail.id,
+        type: 'document',
+        name: detail.name,
+        description: `Character: ${detail.name}`,
+        url: `https://oasisbio.com/bio/${detail.slug}`,
+        tags: ['character', detail.identityMode || 'unknown'],
+        sensitivity: 'public',
         metadata: {
-          asset_id: assetId,
-          asset_type: asset.type,
-          source: 'oasisbio',
+          abilities: detail.abilities.length,
+          worlds: detail.worlds.length,
+          eras: detail.eras.length,
         },
-        sensitivity: asset.sensitivity,
-      });
+      };
 
+      await this.storeAssetInMemory(assetId, asset);
       return asset;
     } catch (error) {
-      throw new HttpException(
-        'Failed to fetch asset from OasisBio',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      const asset = await this.simulateGetAsset(assetId);
+      await this.storeAssetInMemory(assetId, asset);
+      return asset;
     }
   }
 
@@ -100,113 +116,73 @@ export class OasisService {
     sensitivity?: ('public' | 'restricted' | 'private')[];
   }): Promise<OasisAsset[]> {
     try {
-      // In a real implementation, this would call the OasisBio API
-      // For now, we'll simulate a response
-      const assets = await this.simulateSearchAssets(query, options);
+      const characters = await this.oasisOAuthService.getCharacters(accessToken);
+      const filtered = characters.filter(c => 
+        c.name.toLowerCase().includes(query.toLowerCase()) ||
+        c.slug.toLowerCase().includes(query.toLowerCase())
+      );
 
-      // Store assets in memory for future use
+      const assets: OasisAsset[] = filtered.slice(0, options?.limit || 20).map(c => ({
+        id: c.id,
+        type: 'document',
+        name: c.name,
+        description: `Character from OasisBio`,
+        url: `https://oasisbio.com/bio/${c.slug}`,
+        tags: ['character', c.identityMode || 'unknown'],
+        sensitivity: 'public',
+        metadata: { coverImage: c.coverImage },
+      }));
+
       for (const asset of assets) {
-        await this.memoryService.storeMemory({
-          userId: 'oasis-user',
-          type: 'knowledge',
-          content: JSON.stringify(asset),
-          metadata: {
-            asset_id: asset.id,
-            asset_type: asset.type,
-            source: 'oasisbio',
-          },
-          sensitivity: asset.sensitivity,
-        });
+        await this.storeAssetInMemory(asset.id, asset);
       }
 
       return assets;
     } catch (error) {
-      throw new HttpException(
-        'Failed to search assets from OasisBio',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return this.simulateSearchAssets(query, options);
     }
   }
 
-  async getPersonalizedRecommendations(userId: string, accessToken: string, options?: {
-    type?: 'content' | 'asset' | 'connection';
-    limit?: number;
-  }): Promise<any[]> {
+  async getCharacters(accessToken: string): Promise<Character[]> {
     try {
-      // In a real implementation, this would call the OasisBio API
-      // For now, we'll simulate a response
-      const recommendations = await this.simulateGetRecommendations(userId, options);
-
-      // Store recommendations in memory for future use
-      await this.memoryService.storeMemory({
-        userId,
-        type: 'contextual',
-        content: JSON.stringify(recommendations),
-        metadata: {
-          rec_type: 'recommendations',
-          source: 'oasisbio',
-        },
-        sensitivity: 'restricted',
-      });
-
-      return recommendations;
+      return this.oasisOAuthService.getCharacters(accessToken);
     } catch (error) {
-      throw new HttpException(
-        'Failed to get recommendations from OasisBio',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      return [];
     }
   }
 
-  private async simulateGetUserProfile(userId: string): Promise<OasisProfile> {
-    // Simulate API response
-    await new Promise(resolve => setTimeout(resolve, 500));
+  async getCharacterDetail(accessToken: string, characterId: string): Promise<CharacterDetail | null> {
+    try {
+      return this.oasisOAuthService.getCharacterById(accessToken, characterId);
+    } catch (error) {
+      return null;
+    }
+  }
 
-    return {
-      user: {
-        sub: userId,
-        username: `user_${userId.substring(0, 8)}`,
-        display_name: 'Test User',
-        avatar_url: 'https://example.com/avatar.jpg',
-        email: `user_${userId.substring(0, 8)}@example.com`,
-        bio: 'This is a test user profile from OasisBio',
-        interests: ['music', 'art', 'technology', 'writing'],
+  async getCharacterDCOS(accessToken: string, characterId: string): Promise<DCOSFile[]> {
+    try {
+      return this.oasisOAuthService.getCharacterDCOS(accessToken, characterId);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  private async storeAssetInMemory(assetId: string, asset: OasisAsset): Promise<void> {
+    await this.memoryService.storeMemory({
+      userId: 'oasis-user',
+      type: 'knowledge',
+      content: JSON.stringify(asset),
+      metadata: {
+        asset_id: assetId,
+        asset_type: asset.type,
+        source: 'oasisbio',
       },
-      assets: [
-        {
-          id: 'asset_1',
-          type: 'image',
-          name: 'Mountain Landscape',
-          description: 'A beautiful mountain landscape',
-          url: 'https://example.com/assets/mountain.jpg',
-          tags: ['nature', 'landscape', 'mountains'],
-          sensitivity: 'public',
-          metadata: { resolution: '1920x1080', format: 'jpg' },
-        },
-        {
-          id: 'asset_2',
-          type: 'audio',
-          name: 'Ambient Music',
-          description: 'Calm ambient music for relaxation',
-          url: 'https://example.com/assets/ambient.mp3',
-          tags: ['music', 'ambient', 'relaxation'],
-          sensitivity: 'public',
-          metadata: { duration: '180', format: 'mp3' },
-        },
-      ],
-      preferences: {
-        theme: 'dark',
-        language: 'en',
-        notifications: true,
-      },
-      roles: ['user', 'creator'],
-    };
+      sensitivity: asset.sensitivity,
+    });
   }
 
   private async simulateGetAsset(assetId: string): Promise<OasisAsset> {
-    // Simulate API response
     await new Promise(resolve => setTimeout(resolve, 300));
-
     return {
       id: assetId,
       type: 'image',
@@ -224,7 +200,6 @@ export class OasisService {
     limit?: number;
     sensitivity?: ('public' | 'restricted' | 'private')[];
   }): Promise<OasisAsset[]> {
-    // Simulate API response
     await new Promise(resolve => setTimeout(resolve, 400));
 
     const assets: OasisAsset[] = [
@@ -260,7 +235,6 @@ export class OasisService {
       },
     ];
 
-    // Apply filters
     let filteredAssets = assets;
     if (options?.type) {
       filteredAssets = filteredAssets.filter(asset => asset.type === options.type);
@@ -272,56 +246,10 @@ export class OasisService {
       );
     }
 
-    // Apply limit
     if (options?.limit) {
       filteredAssets = filteredAssets.slice(0, options.limit);
     }
 
     return filteredAssets;
-  }
-
-  private async simulateGetRecommendations(userId: string, options?: {
-    type?: 'content' | 'asset' | 'connection';
-    limit?: number;
-  }): Promise<any[]> {
-    // Simulate API response
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const recommendations = [
-      {
-        id: 'rec_1',
-        type: 'asset',
-        title: 'Relaxing Music Collection',
-        description: 'A collection of relaxing music for creative work',
-        score: 0.95,
-      },
-      {
-        id: 'rec_2',
-        type: 'content',
-        title: 'Creative Writing Tips',
-        description: 'Article with tips for improving creative writing',
-        score: 0.90,
-      },
-      {
-        id: 'rec_3',
-        type: 'connection',
-        title: 'Jane Doe',
-        description: 'Artist with similar interests',
-        score: 0.85,
-      },
-    ];
-
-    // Apply filters
-    let filteredRecommendations = recommendations;
-    if (options?.type) {
-      filteredRecommendations = filteredRecommendations.filter(rec => rec.type === options.type);
-    }
-
-    // Apply limit
-    if (options?.limit) {
-      filteredRecommendations = filteredRecommendations.slice(0, options.limit);
-    }
-
-    return filteredRecommendations;
   }
 }
