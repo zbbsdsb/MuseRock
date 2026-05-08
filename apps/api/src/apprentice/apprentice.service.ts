@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MemoryService } from '../memory/memory.service';
 import { AIService } from '../ai/ai.service';
+import { ObservabilityService } from '../observability/observability.service';
 import { Apprentice } from './entities/apprentice.entity';
 import { Job } from './entities/job.entity';
 
@@ -18,7 +19,8 @@ export class ApprenticeService {
     @InjectRepository(Job)
     private readonly jobRepository: Repository<Job>,
     private readonly memoryService: MemoryService,
-    private readonly aiService: AIService
+    private readonly aiService: AIService,
+    private readonly observabilityService: ObservabilityService,
   ) {
     // Start job processor
     this.processJobs();
@@ -163,8 +165,11 @@ export class ApprenticeService {
       job.error = 'Apprentice not found';
       job.completedAt = new Date();
       await this.jobRepository.save(job);
+      this.observabilityService.recordApprenticeJob(apprentice?.role || 'unknown', 'failed');
       return;
     }
+
+    const startTime = Date.now();
 
     // Update job status
     job.status = 'in_progress';
@@ -185,12 +190,19 @@ export class ApprenticeService {
       apprentice.lastUsed = new Date();
       await this.apprenticeRepository.save(apprentice);
 
+      const duration = Date.now() - startTime;
+      this.observabilityService.recordApprenticeJob(apprentice.role, 'completed', duration);
+
     } catch (error) {
       job.status = 'failed';
       job.error = error instanceof Error ? error.message : 'Unknown error';
       job.completedAt = new Date();
+      
+      const duration = Date.now() - startTime;
+      this.observabilityService.recordApprenticeJob(apprentice.role, 'failed', duration);
     } finally {
       await this.jobRepository.save(job);
+      this.observabilityService.setJobQueueLength(this.jobQueue.length);
     }
   }
 

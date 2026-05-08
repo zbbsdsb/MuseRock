@@ -2,6 +2,7 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ModelAdapterFactory, ProviderType } from './adapters/adapter.factory';
 import { ModelOptions, ModelResponse } from './adapters/base.adapter';
 import { PromptRegistryService, PromptTemplate } from './prompt-registry.service';
+import { ObservabilityService } from '../observability/observability.service';
 
 export interface GenerationRequest {
   prompt: string;
@@ -27,6 +28,7 @@ export class AIService {
   constructor(
     private adapterFactory: ModelAdapterFactory,
     private promptRegistry: PromptRegistryService,
+    private observabilityService: ObservabilityService,
   ) {}
 
   async generateContent(request: GenerationRequest): Promise<ModelResponse> {
@@ -44,12 +46,19 @@ export class AIService {
     }
 
     try {
-      return await this.adapterFactory.generateContent(
+      const response = await this.adapterFactory.generateContent(
         provider,
         prompt,
         systemPrompt,
         options,
       );
+
+      if (response.tokensUsed) {
+        const totalTokens = response.tokensUsed.prompt + (response.tokensUsed.completion || 0);
+        this.observabilityService.recordAiTokens(provider, options.model || 'unknown', totalTokens);
+      }
+
+      return response;
     } catch (error) {
       throw new HttpException(
         `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -87,7 +96,7 @@ export class AIService {
     const schema = this.promptRegistry.getSchema(templateId);
     
     try {
-      return await this.adapterFactory.generateContent(
+      const response = await this.adapterFactory.generateContent(
         provider,
         userInput,
         systemPrompt,
@@ -96,6 +105,13 @@ export class AIService {
           responseFormat: 'json',
         },
       );
+
+      if (response.tokensUsed) {
+        const totalTokens = response.tokensUsed.prompt + (response.tokensUsed.completion || 0);
+        this.observabilityService.recordAiTokens(provider, options.model || 'unknown', totalTokens);
+      }
+
+      return response;
     } catch (error) {
       throw new HttpException(
         `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,

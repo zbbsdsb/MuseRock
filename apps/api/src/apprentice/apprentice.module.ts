@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ApprenticeService } from './apprentice.service';
 import { MemoryModule } from '../memory/memory.module';
 import { AIModule } from '../ai/ai.module';
+import { ObservabilityModule } from '../observability/observability.module';
 import { Apprentice } from './entities/apprentice.entity';
 import { Job } from './entities/job.entity';
 
@@ -11,6 +12,7 @@ import { Job } from './entities/job.entity';
     TypeOrmModule.forFeature([Apprentice, Job]),
     MemoryModule,
     AIModule,
+    ObservabilityModule,
   ],
   providers: [ApprenticeService],
   exports: [ApprenticeService],
