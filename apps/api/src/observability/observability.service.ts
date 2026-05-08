@@ -1,6 +1,8 @@
 import { Injectable, Logger, NestMiddleware, OnModuleInit } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { Counter, Histogram, Gauge, register, CollectorRegistry } from 'prom-client';
+import { Counter, Histogram, Gauge, register } from 'prom-client';
+
+export type CollectorRegistry = typeof register;
 
 @Injectable()
 export class ObservabilityService implements OnModuleInit {
