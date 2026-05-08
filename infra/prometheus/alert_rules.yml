@@ -1,0 +1,47 @@
+groups:
+  - name: muserock_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(mcp_errors_total[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High MCP error rate detected"
+          description: "Error rate is {{ $value }}% which exceeds the 10% threshold"
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(mcp_request_duration_seconds_bucket[5m])) by (le)) > 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High MCP request latency"
+          description: "P95 latency is {{ $value }}s which exceeds 1s threshold"
+
+      - alert: QueueBacklog
+        expr: job_queue_length > 100
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Job queue backlog detected"
+          description: "Queue length is {{ $value }} which exceeds 100 pending jobs"
+
+      - alert: TokenOveruse
+        expr: rate(ai_tokens_used_total[1h]) > 10000
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "High AI token consumption"
+          description: "Token usage rate is {{ $value }} tokens/hour which exceeds 10k/hour threshold"
+
+      - alert: ConnectionSpike
+        expr: active_connections > 500
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket connection spike"
+          description: "Active connections are {{ $value }} which exceeds 500 connections"
