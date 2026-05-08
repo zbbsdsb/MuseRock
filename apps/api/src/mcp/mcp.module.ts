@@ -26,6 +26,7 @@ import { OasisModule } from '../oasis/oasis.module';
 import { HealthModule } from '../health/health.module';
 import { AIModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
+import { ObservabilityModule } from '../observability/observability.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { AuthModule } from '../auth/auth.module';
     HealthModule,
     AIModule,
     AuthModule,
+    ObservabilityModule,
   ],
   controllers: [McpController],
   providers: [

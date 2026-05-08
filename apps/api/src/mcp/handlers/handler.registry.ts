@@ -5,6 +5,7 @@ import {
   createMethodNotFoundError,
   createInternalError,
 } from '../utils/rpc.helpers';
+import { ObservabilityService } from '../../observability/observability.service';
 
 export interface MCPHandler {
   getMethodName(): string;
@@ -14,6 +15,8 @@ export interface MCPHandler {
 @Injectable()
 export class HandlerRegistry {
   private handlers = new Map<string, MCPHandler>();
+
+  constructor(private readonly observabilityService: ObservabilityService) {}
 
   register(handler: MCPHandler): void {
     this.handlers.set(handler.getMethodName(), handler);
@@ -32,12 +35,20 @@ export class HandlerRegistry {
   }
 
   async handleRequest(request: JsonRpcRequest, user?: { id: string; permissions: string[] }): Promise<JsonRpcResponse> {
+    const startTime = Date.now();
+    const method = request.method;
+
     try {
-      const handler = this.getHandler(request.method);
+      const handler = this.getHandler(method);
       const result = await handler.execute(request.params || {}, user);
+      const duration = Date.now() - startTime;
+      this.observabilityService.recordMcpRequest(method, 'success', duration);
       return createSuccessResponse(request.id, result);
     } catch (error) {
+      const duration = Date.now() - startTime;
       if (error instanceof HttpException) {
+        this.observabilityService.recordMcpRequest(method, 'error', duration);
+        this.observabilityService.recordMcpError(method, error.message);
         return {
           jsonrpc: '2.0',
           id: request.id,
@@ -48,6 +59,8 @@ export class HandlerRegistry {
           },
         };
       }
+      this.observabilityService.recordMcpRequest(method, 'error', duration);
+      this.observabilityService.recordMcpError(method, 'internal_error');
       return createInternalError(request.id, error as Error);
     }
   }

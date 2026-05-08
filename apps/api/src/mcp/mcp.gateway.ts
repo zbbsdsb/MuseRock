@@ -9,6 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { HandlerRegistry } from './handlers/handler.registry';
 import { JsonRpcRequest, JsonRpcResponse } from './types/mcp.types';
 import { validateJsonRpcRequest, createParseError } from './utils/rpc.helpers';
+import { ObservabilityService } from '../observability/observability.service';
 
 @WebSocketGateway({
   cors: {
@@ -21,14 +22,19 @@ export class MCPGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private activeConnections = new Set<string>();
 
-  constructor(private readonly handlerRegistry: HandlerRegistry) {}
+  constructor(
+    private readonly handlerRegistry: HandlerRegistry,
+    private readonly observabilityService: ObservabilityService,
+  ) {}
 
   handleConnection(client: Socket) {
     this.activeConnections.add(client.id);
+    this.observabilityService.setActiveConnections(this.activeConnections.size);
   }
 
   handleDisconnect(client: Socket) {
     this.activeConnections.delete(client.id);
+    this.observabilityService.setActiveConnections(this.activeConnections.size);
   }
 
   @SubscribeMessage('rpc')

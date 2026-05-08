@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { MemoryService, SearchResult } from '../../memory/memory.service';
 import { MCPHandler } from './handler.registry';
 import { SearchMemoryParams, SearchMemoryResult, MemorySearchItem } from '../types/mcp.types';
+import { ObservabilityService } from '../../observability/observability.service';
 
 @Injectable()
 export class MemoryHandler implements MCPHandler {
-  constructor(private readonly memoryService: MemoryService) {}
+  constructor(
+    private readonly memoryService: MemoryService,
+    private readonly observabilityService: ObservabilityService,
+  ) {}
 
   getMethodName(): string {
     return 'search_memory';
@@ -23,6 +27,16 @@ export class MemoryHandler implements MCPHandler {
       sensitivity: searchParams.sensitivity,
     });
 
+    const duration = Date.now() - startTime;
+    const layer = (searchParams.layers && searchParams.layers.length > 0) 
+      ? searchParams.layers[0] 
+      : 'all';
+    const sensitivity = (searchParams.sensitivity && searchParams.sensitivity.length > 0)
+      ? searchParams.sensitivity[0]
+      : 'all';
+
+    this.observabilityService.recordMemorySearch(layer, sensitivity, results.length, duration);
+
     const memoryItems: MemorySearchItem[] = results.map((result: SearchResult) => ({
       id: result.item.id,
       content: result.item.content,
@@ -35,7 +49,7 @@ export class MemoryHandler implements MCPHandler {
     return {
       results: memoryItems,
       total: memoryItems.length,
-      took: Date.now() - startTime,
+      took: duration,
     };
   }
 }
