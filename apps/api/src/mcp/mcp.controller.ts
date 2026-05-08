@@ -1,20 +1,104 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Ip } from '@nestjs/common';
-import { McpService } from './mcp.service';
-import { JsonRpcRequest, JsonRpcResponse } from './mcp.service';
+import { Controller, Post, Body, HttpCode, HttpStatus, Ip, UseMiddleware, Req } from '@nestjs/common';
+import { Request } from 'express';
+import { HandlerRegistry } from './handlers/handler.registry';
+import { AuthMiddleware } from './middleware/auth.middleware';
+import { ValidationMiddleware } from './middleware/validation.middleware';
+import { RateLimitMiddleware } from './middleware/rate-limit.middleware';
+import { AuditService } from './services/audit.service';
+import { JsonRpcRequest, JsonRpcResponse } from './types/mcp.types';
+import { validateJsonRpcRequest, createParseError } from './utils/rpc.helpers';
 
 @Controller('mcp')
 export class McpController {
-  constructor(private readonly mcpService: McpService) {}
+  constructor(
+    private readonly handlerRegistry: HandlerRegistry,
+    private readonly auditService: AuditService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.OK)
-  async handleJsonRpc(@Body() request: JsonRpcRequest, @Ip() ip: string): Promise<JsonRpcResponse> {
-    return this.mcpService.handleRequest(request, ip);
+  @UseMiddleware(AuthMiddleware)
+  @UseMiddleware(ValidationMiddleware)
+  @UseMiddleware(RateLimitMiddleware)
+  async handleJsonRpc(
+    @Body() body: unknown,
+    @Ip() ip: string,
+    @Req() req: Request,
+  ): Promise<JsonRpcResponse> {
+    const startTime = Date.now();
+    
+    if (!validateJsonRpcRequest(body)) {
+      await this.auditService.log({
+        userId: 'unknown',
+        method: 'invalid',
+        params: {},
+        responseCode: 400,
+        ipAddress: ip,
+        userAgent: req.headers['user-agent'] || '',
+        latency: Date.now() - startTime,
+      });
+      return createParseError();
+    }
+
+    const request = body as JsonRpcRequest;
+    const user = req.user;
+
+    try {
+      const response = await this.handlerRegistry.handleRequest(request, user);
+      
+      await this.auditService.log({
+        userId: user?.id || 'unknown',
+        method: request.method,
+        params: request.params || {},
+        responseCode: 200,
+        ipAddress: ip,
+        userAgent: req.headers['user-agent'] || '',
+        latency: Date.now() - startTime,
+      });
+
+      return response;
+    } catch (error) {
+      await this.auditService.log({
+        userId: user?.id || 'unknown',
+        method: request.method,
+        params: request.params || {},
+        responseCode: error instanceof Error ? 500 : 500,
+        ipAddress: ip,
+        userAgent: req.headers['user-agent'] || '',
+        latency: Date.now() - startTime,
+      });
+
+      throw error;
+    }
   }
 
   @Post('batch')
   @HttpCode(HttpStatus.OK)
-  async handleBatchJsonRpc(@Body() requests: JsonRpcRequest[], @Ip() ip: string): Promise<JsonRpcResponse[]> {
-    return this.mcpService.handleBatchRequest(requests, ip);
+  @UseMiddleware(AuthMiddleware)
+  @UseMiddleware(RateLimitMiddleware)
+  async handleBatchJsonRpc(
+    @Body() bodies: unknown[],
+    @Ip() ip: string,
+    @Req() req: Request,
+  ): Promise<JsonRpcResponse[]> {
+    const user = req.user;
+    
+    return Promise.all(
+      bodies.map(async (body) => {
+        if (!validateJsonRpcRequest(body)) {
+          return createParseError();
+        }
+        
+        const request = body as JsonRpcRequest;
+        return this.handlerRegistry.handleRequest(request, user);
+      }),
+    );
+  }
+
+  @Post('list_methods')
+  @HttpCode(HttpStatus.OK)
+  @UseMiddleware(AuthMiddleware)
+  listMethods(): { methods: string[] } {
+    return { methods: this.handlerRegistry.listMethods() };
   }
 }
