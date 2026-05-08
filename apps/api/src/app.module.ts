@@ -11,7 +11,7 @@ import { ComplianceModule } from './compliance/compliance.module';
 import { HealthModule } from './health/health.module';
 import { AIModule } from './ai/ai.module';
 import { TrpcModule } from './trpc/trpc.module';
-import { trpcMiddlewareFactory } from './trpc/trpc.express';
+import { QueueModule } from './queue/queue.module';
 import { APP_ROUTER_PROVIDER } from './trpc/trpc.providers';
 
 @Module({
@@ -32,6 +32,7 @@ import { APP_ROUTER_PROVIDER } from './trpc/trpc.providers';
     HealthModule,
     AIModule,
     TrpcModule,
+    QueueModule,
   ],
   controllers: [],
   providers: [APP_ROUTER_PROVIDER],
