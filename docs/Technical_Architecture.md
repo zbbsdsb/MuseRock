@@ -130,6 +130,31 @@ flowchart TD
   - ACL and sensitivity filtering
   - Vector search integration
 
+#### AI Service
+- **Responsibilities**:
+  - AI model integration and orchestration
+  - Structured output generation with JSON schemas
+  - Prompt template management and rendering
+  - Multi-provider support via adapter pattern
+  - Token usage tracking and reporting
+
+#### Prompt Registry Service
+- **Responsibilities**:
+  - CRUD operations for prompt templates
+  - Template versioning
+  - Variable validation and substitution
+  - JSON schema definitions for structured outputs
+  - Default templates for all roles (researcher, writer, designer, musician)
+
+#### Model Adapter Layer
+- **Responsibilities**:
+  - Unified interface for all AI providers
+  - OpenAI API integration
+  - Google Gemini API integration
+  - Structured output support
+  - Token usage tracking
+  - Provider-specific configuration
+
 #### Apprentice Service
 - **Responsibilities**:
   - Agent lifecycle management
@@ -308,6 +333,6 @@ The MuseRock technical architecture is designed to be scalable, secure, and reli
 
 ---
 
-*Document updated on: 2026-04-27*
-*Version: 1.0*
+*Document updated on: 2026-05-08*
+*Version: 1.1*
 *Author: MuseRock Team*

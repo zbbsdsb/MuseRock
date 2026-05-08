@@ -34,6 +34,116 @@ This document provides detailed information about the MuseRock API, including en
    - Description: Logs out the current user
    - Headers: Requires authentication cookies
 
+## AI Service API
+
+### Get Available Providers
+- **Endpoint**: `GET /ai/providers`
+- **Description**: Returns the list of available AI providers
+- **Response**:
+  ```json
+  ["openai", "gemini"]
+  ```
+
+### Get Prompt Templates
+- **Endpoint**: `GET /ai/prompts`
+- **Description**: Returns all available prompt templates
+- **Response**:
+  ```json
+  [
+    {
+      "id": "researcher-v1",
+      "name": "Researcher",
+      "role": "researcher",
+      "version": "1.0.0",
+      "variables": ["topic", "depth"],
+      "description": "Expert research assistant for exploring topics"
+    }
+  ]
+  ```
+
+### Get Prompt Template by ID
+- **Endpoint**: `GET /ai/prompts/{id}`
+- **Description**: Returns a specific prompt template
+- **Response**:
+  ```json
+  {
+    "id": "researcher-v1",
+    "name": "Researcher",
+    "role": "researcher",
+    "version": "1.0.0",
+    "variables": ["topic", "depth"],
+    "template": "You are MuseRock's Researcher...",
+    "schema": { "type": "object", ... },
+    "description": "Expert research assistant for exploring topics"
+  }
+  ```
+
+### Create Prompt Template
+- **Endpoint**: `POST /ai/prompts`
+- **Description**: Creates a new prompt template
+- **Request Body**:
+  ```json
+  {
+    "name": "Custom Researcher",
+    "role": "researcher",
+    "template": "You are a custom researcher...",
+    "variables": ["topic"],
+    "description": "Custom research assistant",
+    "schema": { "type": "object", ... }
+  }
+  ```
+- **Response**: Created prompt template object
+
+### Generate Content
+- **Endpoint**: `POST /ai/generate`
+- **Description**: Generates AI content
+- **Request Body**:
+  ```json
+  {
+    "prompt": "Tell me about renewable energy",
+    "role": "researcher",
+    "provider": "openai",
+    "parameters": {
+      "model": "gpt-4o-mini",
+      "temperature": 0.7,
+      "maxTokens": 1000
+    }
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "content": "Renewable energy is...",
+    "tokensUsed": {
+      "prompt": 50,
+      "completion": 200,
+      "total": 250
+    },
+    "model": "gpt-4o-mini"
+  }
+  ```
+
+### Generate Structured Content
+- **Endpoint**: `POST /ai/generate-structured`
+- **Description**: Generates structured JSON content
+- **Request Body**: Same as generate content
+- **Response**: JSON object with structured content
+
+### Generate From Template
+- **Endpoint**: `POST /ai/generate-from-template`
+- **Description**: Generates content using a prompt template
+- **Request Body**:
+  ```json
+  {
+    "templateId": "researcher-v1",
+    "variables": { "topic": "renewable energy", "depth": "detailed" },
+    "userInput": "Research renewable energy sources",
+    "provider": "openai",
+    "parameters": { "temperature": 0.7 }
+  }
+  ```
+- **Response**: Generated content based on template
+
 ## Memory Service API
 
 ### Store Memory
@@ -321,6 +431,6 @@ curl -X POST http://localhost:3001/mcp \
 
 ---
 
-*Document updated on: 2026-04-27*
-*Version: 1.0*
+*Document updated on: 2026-05-08*
+*Version: 1.1*
 *Author: MuseRock Team*

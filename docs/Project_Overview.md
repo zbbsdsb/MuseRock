@@ -16,7 +16,20 @@ MuseRock is a creative assistance tool designed to help users with various creat
 - **ACL and Sensitivity Filtering**: All memory operations go through access control and sensitivity level filtering
 - **Vector Search**: Integration with pgvector for semantic search capabilities
 
-### 2. Apprentice System
+### 2. AI Integration Layer
+- **Multi-Provider Support**: Integration with OpenAI and Google Gemini APIs via adapter pattern
+- **Structured Output Generation**: JSON-schema validated structured content
+- **Token Usage Tracking**: Detailed token consumption reporting
+- **Prompt Registry**: Centralized prompt template management
+
+### 3. Prompt Registry System
+- **Template Management**: CRUD operations for prompt templates
+- **Versioning**: Template version control
+- **Variable Substitution**: Dynamic variable replacement in templates
+- **JSON Schema Validation**: Structured output definitions
+- **Default Templates**: Pre-built templates for all roles (researcher, writer, designer, musician)
+
+### 4. Apprentice System
 - **Role-Based Agents**: Specialized agents for different creative tasks (researcher, writer, designer, musician)
 - **Job Queue**: Asynchronous task processing with concurrency control
 - **Budget Management**: Token budget control for AI model usage
@@ -140,6 +153,6 @@ MuseRock is a comprehensive creative assistance tool that leverages advanced AI 
 
 ---
 
-*Document updated on: 2026-04-27*
-*Version: 1.0*
+*Document updated on: 2026-05-08*
+*Version: 1.1*
 *Author: MuseRock Team*
