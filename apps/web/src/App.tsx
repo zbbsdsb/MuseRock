@@ -252,6 +252,43 @@ export default function App() {
     }
   };
 
+  const handleDropContent = async (content: string, type: 'text' | 'image' | 'url' | 'files') => {
+    const currentKey = state.apiKeys?.[state.apiProvider];
+    if (!currentKey) {
+      toggleSettings();
+      return;
+    }
+
+    setState(prev => ({ ...prev, activeTab: 'search' }));
+    setIsAiLoading(true);
+    setAiResult(null);
+
+    try {
+      let prompt = '';
+      switch (type) {
+        case 'text':
+          prompt = `Analyze this text and provide creative insights:\n\n${content}`;
+          break;
+        case 'image':
+          prompt = `Describe this image and provide creative inspiration based on its content.`;
+          break;
+        case 'url':
+          prompt = `Summarize the content at this URL and provide key insights:\n\n${content}`;
+          break;
+        case 'files':
+          prompt = `Analyze these files and provide creative insights:\n\n${content}`;
+          break;
+      }
+
+      const result = await aiServiceRef.current?.sourceAssets(prompt);
+      setAiResult(result || 'No results found.');
+    } catch (err) {
+      setAiResult(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-brand-offwhite text-brand-black font-sans overflow-hidden">
       {/* --- MINIMAL RAIL (Editorial System Nav) --- */}
@@ -669,6 +706,7 @@ export default function App() {
               break;
           }
         }}
+        onDropContent={handleDropContent}
       >
         <MuseSphere />
       </MuseSphereProvider>

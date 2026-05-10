@@ -4,6 +4,7 @@ interface MuseSphereContextType {
   isAiActive: boolean;
   setAiActive: (active: boolean) => void;
   onQuickAction: (action: string) => void;
+  onDropContent: (content: string, type: 'text' | 'image' | 'url' | 'files') => void;
 }
 
 const MuseSphereContext = createContext<MuseSphereContextType | null>(null);
@@ -12,15 +13,25 @@ export interface MuseSphereProviderProps {
   children: ReactNode;
   isAiActive?: boolean;
   onQuickAction?: (action: string) => void;
+  onDropContent?: (content: string, type: 'text' | 'image' | 'url' | 'files') => void;
 }
 
-export function MuseSphereProvider({ children, isAiActive = false, onQuickAction }: MuseSphereProviderProps) {
+export function MuseSphereProvider({ 
+  children, 
+  isAiActive = false, 
+  onQuickAction,
+  onDropContent 
+}: MuseSphereProviderProps) {
   const handleQuickAction = useCallback((action: string) => {
     onQuickAction?.(action);
   }, [onQuickAction]);
 
-  const setAiActive = useCallback(() => {
-    // Placeholder - parent controls isAiActive via prop
+  const handleDropContent = useCallback((content: string, type: 'text' | 'image' | 'url' | 'files') => {
+    onDropContent?.(content, type);
+  }, [onDropContent]);
+
+  const setAiActive = useCallback((active: boolean) => {
+    // Parent controls isAiActive via prop
   }, []);
 
   return (
@@ -28,7 +39,8 @@ export function MuseSphereProvider({ children, isAiActive = false, onQuickAction
       value={{
         isAiActive,
         setAiActive,
-        onQuickAction: handleQuickAction
+        onQuickAction: handleQuickAction,
+        onDropContent: handleDropContent,
       }}
     >
       {children}
