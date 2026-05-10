@@ -22,6 +22,7 @@ export class OasisAuthService {
   private authUrl: string;
   private tokenUrl: string;
   private userinfoUrl: string;
+  private apiBaseUrl: string;
 
   constructor() {
     this.clientId = import.meta.env.VITE_OASIS_CLIENT_ID || '';
@@ -29,6 +30,7 @@ export class OasisAuthService {
     this.authUrl = import.meta.env.VITE_OASIS_AUTH_URL || 'https://oasisbio.com/oauth/authorize';
     this.tokenUrl = import.meta.env.VITE_OASIS_TOKEN_URL || 'https://oasisbio.com/api/oauth/token';
     this.userinfoUrl = import.meta.env.VITE_OASIS_USERINFO_URL || 'https://oasisbio.com/api/oauth/userinfo';
+    this.apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
   }
 
   private generateRandomString(length: number): string {
@@ -52,11 +54,10 @@ export class OasisAuthService {
     return { verifier, challenge };
   }
 
-  public getAuthorizationUrl(scope: string = 'profile email'): Promise<string> {
+  public getAuthorizationUrl(scope: string = 'profile email oasisbios:read'): Promise<string> {
     return this.generatePKCE().then(({ verifier, challenge }) => {
       const state = this.generateRandomString(16);
       
-      // Store verifier and state in sessionStorage
       sessionStorage.setItem('oasis_pkce_verifier', verifier);
       sessionStorage.setItem('oasis_oauth_state', state);
 
@@ -79,15 +80,12 @@ export class OasisAuthService {
       throw new Error('PKCE verifier not found');
     }
 
-    const response = await fetch(this.tokenUrl, {
+    const response = await fetch(`${this.apiBaseUrl}/auth/oasis/callback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      credentials: 'include',
       body: new URLSearchParams({
-        grant_type: 'authorization_code',
-        client_id: this.clientId,
-        client_secret: import.meta.env.VITE_OASIS_CLIENT_SECRET || '',
         code: code,
-        redirect_uri: this.redirectUri,
         code_verifier: verifier,
       }),
     });
@@ -98,9 +96,7 @@ export class OasisAuthService {
     }
 
     const tokens: OasisTokens = await response.json();
-    this.storeTokens(tokens);
     
-    // Clean up sessionStorage
     sessionStorage.removeItem('oasis_pkce_verifier');
     sessionStorage.removeItem('oasis_oauth_state');
 
@@ -108,20 +104,9 @@ export class OasisAuthService {
   }
 
   public async refreshTokens(): Promise<OasisTokens> {
-    const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('Refresh token not found');
-    }
-
-    const response = await fetch(this.tokenUrl, {
+    const response = await fetch(`${this.apiBaseUrl}/auth/oasis/refresh`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        client_id: this.clientId,
-        client_secret: import.meta.env.VITE_OASIS_CLIENT_SECRET || '',
-        refresh_token: refreshToken,
-      }),
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -129,19 +114,12 @@ export class OasisAuthService {
       throw new Error(error.error_description || 'Token refresh failed');
     }
 
-    const tokens: OasisTokens = await response.json();
-    this.storeTokens(tokens);
-    return tokens;
+    return response.json();
   }
 
   public async getUserInfo(): Promise<OasisUser> {
-    const accessToken = this.getAccessToken();
-    if (!accessToken) {
-      throw new Error('Access token not found');
-    }
-
-    const response = await fetch(this.userinfoUrl, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    const response = await fetch(`${this.apiBaseUrl}/auth/oasis/userinfo`, {
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -151,42 +129,27 @@ export class OasisAuthService {
     return response.json();
   }
 
-  public storeTokens(tokens: OasisTokens): void {
-    localStorage.setItem('oasis_access_token', tokens.access_token);
-    localStorage.setItem('oasis_refresh_token', tokens.refresh_token);
-    localStorage.setItem('oasis_token_expiry', (Date.now() + tokens.expires_in * 1000).toString());
+  public getAccessToken(): Promise<string | null> {
+    return fetch(`${this.apiBaseUrl}/auth/oasis/token`, {
+      credentials: 'include',
+    }).then(response => {
+      if (!response.ok) {
+        return null;
+      }
+      return response.json().then(data => data.access_token || null);
+    }).catch(() => null);
   }
 
-  public getAccessToken(): string | null {
-    const token = localStorage.getItem('oasis_access_token');
-    const expiry = localStorage.getItem('oasis_token_expiry');
-
-    if (!token || !expiry) {
-      return null;
-    }
-
-    if (Date.now() > parseInt(expiry, 10)) {
-      this.refreshTokens().catch(() => {
-        this.clearTokens();
-      });
-      return null;
-    }
-
-    return token;
+  public async clearTokens(): Promise<void> {
+    await fetch(`${this.apiBaseUrl}/auth/oasis/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
   }
 
-  public getRefreshToken(): string | null {
-    return localStorage.getItem('oasis_refresh_token');
-  }
-
-  public clearTokens(): void {
-    localStorage.removeItem('oasis_access_token');
-    localStorage.removeItem('oasis_refresh_token');
-    localStorage.removeItem('oasis_token_expiry');
-  }
-
-  public isAuthenticated(): boolean {
-    return !!this.getAccessToken();
+  public async isAuthenticated(): Promise<boolean> {
+    const token = await this.getAccessToken();
+    return !!token;
   }
 
   public validateState(state: string): boolean {

@@ -85,4 +85,17 @@ export class AuthService {
   async deleteSession(userId: string): Promise<void> {
     await this.sessionService.deleteSession(userId);
   }
+
+  async exchangeCodeWithPKCE(code: string, codeVerifier: string): Promise<OAuthTokens> {
+    return this.oasisOAuthService.exchangeCodeForTokens(code, codeVerifier);
+  }
+
+  async validateToken(accessToken: string): Promise<boolean> {
+    try {
+      await this.oasisOAuthService.getUserInfo(accessToken);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
