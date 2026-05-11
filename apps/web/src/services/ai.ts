@@ -1,57 +1,136 @@
-import { GoogleGenAI } from "@google/genai";
 import { ApiProvider } from "../types";
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
 export class AIService {
-  private geminiGenAI: GoogleGenAI | null = null;
   private provider: ApiProvider;
-  private apiKey: string;
 
-  constructor(provider: ApiProvider, apiKey: string) {
+  constructor(provider: ApiProvider, _apiKey: string) {
     this.provider = provider;
-    this.apiKey = apiKey;
-    
-    if (provider === 'gemini' && apiKey) {
-      this.geminiGenAI = new GoogleGenAI({ apiKey });
+    // API Key is now stored server-side, not used client-side
+  }
+
+  async getInspiration(context: string, type: string): Promise<string> {
+    const response = await fetch(`${API_URL}/ai/inspiration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        provider: this.provider,
+        context,
+        type,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to get inspiration');
+    }
+
+    const data = await response.json();
+    return data.content;
+  }
+
+  async sourceAssets(query: string): Promise<string> {
+    const response = await fetch(`${API_URL}/ai/source-assets`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        provider: this.provider,
+        query,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to source assets');
+    }
+
+    const data = await response.json();
+    return data.content;
+  }
+
+  async generateContent(
+    prompt: string,
+    systemPrompt?: string,
+    options?: {
+      model?: string;
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+    const response = await fetch(`${API_URL}/ai/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        provider: this.provider,
+        prompt,
+        systemPrompt,
+        options,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to generate content');
+    }
+
+    return response.json();
+  }
+}
+
+// API Key Management Service
+export class ApiKeyService {
+  async saveApiKey(provider: ApiProvider, apiKey: string): Promise<void> {
+    const response = await fetch(`${API_URL}/api-keys`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        provider,
+        apiKey,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to save API key');
     }
   }
 
-  async getInspiration(context: string, type: string) {
-    if (!this.apiKey) throw new Error("API Key not configured");
-    
-    if (this.provider === 'gemini' && this.geminiGenAI) {
-      const response = await this.geminiGenAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Context: ${context}\n\nTask: Provide creation assistance for a creator based on this context. Focus on ${type}. Keep it brief, evocative, and high-impact. Avoid clichés.`,
-        config: {
-            systemInstruction: "You are MuseRock, an elite creation assistant. You provide sharp, non-obvious insights and materials for creators across various disciplines.",
-            temperature: 0.8
-        }
-      });
-      return response.text;
-    }
-    
-    if (this.provider === 'openai' || this.provider === 'anthropic') {
-        return `Experimental support for ${this.provider} is being integrated. Please ensure your key is valid. (Implementation pending SDK integration). In the meantime, MuseRock recommends the Gemini provider for stable results.`;
+  async listApiKeys(): Promise<{ provider: ApiProvider; hasKey: boolean; lastUsedAt?: Date }[]> {
+    const response = await fetch(`${API_URL}/api-keys`, {
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to list API keys');
     }
 
-    return "Provider not yet fully implemented.";
+    const data = await response.json();
+    return data.keys;
   }
 
-  async sourceAssets(query: string) {
-    if (!this.apiKey) throw new Error("API Key not configured");
+  async deleteApiKey(provider: ApiProvider): Promise<void> {
+    const response = await fetch(`${API_URL}/api-keys/${provider}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
 
-    if (this.provider === 'gemini' && this.geminiGenAI) {
-      const response = await this.geminiGenAI.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Search Query: ${query}\n\nTask: Act as a creation assistant. Find 3-5 high-quality references, data points, or sources relevant to this query. Categorize them and explain why they are valuable for a creator.`,
-        config: {
-            systemInstruction: "You are MuseRock Creation Assistant. You find deep references (scientific, historical, artistic) that others miss for creators across various disciplines.",
-            temperature: 0.3
-        }
-      });
-      return response.text;
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to delete API key');
     }
-
-    return `Sourcing assets via ${this.provider} is currently in alpha. Use Gemini for the full experience.`;
   }
 }

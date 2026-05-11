@@ -25,11 +25,15 @@ import {
   Download,
   FileText,
   FileDown,
-  FileImage
+  FileImage,
+  Moon,
+  Sun
 } from 'lucide-react';
+import { useThemeStore } from './stores/themeStore';
 import ReactMarkdown from 'react-markdown';
 import { MuseRockState, MuseRockMessage, ApiProvider, OasisUser } from './types';
-import { AIService } from './services/ai';
+import { AIService, ApiKeyService } from './services/ai';
+import { createAIService, createApiKeyService, getAIMode, setAIMode, type AIMode } from './services/ai-provider';
 import { auth, loginWithGoogle, db } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -62,9 +66,11 @@ export default function App() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Migration: If user has old 'apiKey' field, move it to gemini
-        if (parsed.apiKey && !parsed.apiKeys) {
-          parsed.apiKeys = { ...defaults.apiKeys, gemini: parsed.apiKey };
+        // Remove apiKeys from localStorage - they are now stored server-side
+        if (parsed.apiKeys) {
+          delete parsed.apiKeys;
+        }
+        if (parsed.apiKey) {
           delete parsed.apiKey;
         }
         return { ...defaults, ...parsed };
@@ -85,7 +91,11 @@ export default function App() {
   const [isUserPanelOpen, setIsUserPanelOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [apiKeyStatus, setApiKeyStatus] = useState<{[key: string]: boolean}>({});
+  const [aiMode, setAiModeState] = useState<AIMode>(getAIMode);
   const aiServiceRef = useRef<AIService | null>(null);
+  const apiKeyServiceRef = useRef<ApiKeyService | null>(null);
+  const { isDark, toggleTheme } = useThemeStore();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currUser) => {
@@ -137,12 +147,32 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('muserock_state', JSON.stringify(state));
-    const currentKey = state.apiKeys?.[state.apiProvider];
-    if (currentKey) {
-      aiServiceRef.current = new AIService(state.apiProvider, currentKey);
+    // Save state without apiKeys to localStorage
+    const stateToSave = { ...state };
+    delete (stateToSave as any).apiKeys;
+    localStorage.setItem('muserock_state', JSON.stringify(stateToSave));
+    
+    // Initialize AI service based on current mode
+    aiServiceRef.current = createAIService(state.apiProvider) as any;
+    apiKeyServiceRef.current = createApiKeyService() as any;
+    
+    // Check API key status
+    checkApiKeyStatus();
+  }, [state.apiProvider, aiMode]);
+
+  const checkApiKeyStatus = async () => {
+    if (!apiKeyServiceRef.current) return;
+    try {
+      const keys = await apiKeyServiceRef.current.listApiKeys();
+      const status: {[key: string]: boolean} = {};
+      keys.forEach(key => {
+        status[key.provider] = key.hasKey;
+      });
+      setApiKeyStatus(status);
+    } catch (err) {
+      console.error('Error checking API key status:', err);
     }
-  }, [state]);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -216,11 +246,6 @@ export default function App() {
   };
 
   const performAISearch = async () => {
-    const currentKey = state.apiKeys?.[state.apiProvider];
-    if (!currentKey) {
-      toggleSettings();
-      return;
-    }
     if (!searchQuery.trim()) return;
 
     setIsAiLoading(true);
@@ -236,12 +261,6 @@ export default function App() {
   };
 
   const getInspirationIdea = async (type: string) => {
-    const currentKey = state.apiKeys?.[state.apiProvider];
-    if (!currentKey) {
-      toggleSettings();
-      return;
-    }
-
     setIsAiLoading(true);
     setAiResult(null);
     try {
@@ -254,13 +273,18 @@ export default function App() {
     }
   };
 
-  const handleDropContent = async (content: string, type: 'text' | 'image' | 'url' | 'files') => {
-    const currentKey = state.apiKeys?.[state.apiProvider];
-    if (!currentKey) {
-      toggleSettings();
-      return;
+  const handleSaveApiKey = async (provider: ApiProvider, apiKey: string) => {
+    if (!apiKeyServiceRef.current) return;
+    try {
+      await apiKeyServiceRef.current.saveApiKey(provider, apiKey);
+      await checkApiKeyStatus();
+      alert('API Key saved securely on server');
+    } catch (err) {
+      alert(`Failed to save API key: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
+  };
 
+  const handleDropContent = async (content: string, type: 'text' | 'image' | 'url' | 'files') => {
     setState(prev => ({ ...prev, activeTab: 'search' }));
     setIsAiLoading(true);
     setAiResult(null);
@@ -326,6 +350,13 @@ export default function App() {
         </div>
         
         <div className="space-y-6 flex flex-col items-center">
+          <button 
+            onClick={toggleTheme}
+            className="p-1.5 hover:bg-brand-black/5 rounded-full transition-colors text-brand-black/40 hover:text-brand-black"
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+          </button>
           <button onClick={toggleSettings} className="p-1.5 hover:bg-brand-black/5 rounded-full transition-colors text-brand-black/40 hover:text-brand-black">
             <Settings size={20} />
           </button>
@@ -505,8 +536,8 @@ export default function App() {
             <div className="p-6 bg-brand-black text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${state.apiKeys[state.apiProvider] ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
-                  <span className="text-[10px] uppercase font-black tracking-[0.2em]">{state.apiProvider} Connected</span>
+                  <div className={`w-2 h-2 rounded-full ${apiKeyStatus[state.apiProvider] ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-red-500'}`}></div>
+                  <span className="text-[10px] uppercase font-black tracking-[0.2em]">{state.apiProvider} {apiKeyStatus[state.apiProvider] ? 'Connected' : 'Not Configured'}</span>
                 </div>
                 <div className="flex space-x-3 opacity-40">
                    <Github size={12} className="cursor-pointer" onClick={() => window.open('https://github.com', '_blank')} />
@@ -544,6 +575,41 @@ export default function App() {
               </div>
 
               <div className="space-y-10">
+                {/* AI Mode Toggle */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 flex items-center gap-2">
+                    <ShieldCheck size={14} />
+                    AI Connection Mode
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => { setAIMode('cloud'); setAiModeState('cloud'); }}
+                      className={`py-3 rounded-xl border-2 font-black uppercase tracking-[0.15em] text-[10px] transition-all ${
+                        aiMode === 'cloud'
+                          ? 'border-brand-black bg-brand-black text-white'
+                          : 'border-brand-border bg-white text-brand-black/60 hover:border-brand-black/30'
+                      }`}
+                    >
+                      Cloud (Server Proxy)
+                    </button>
+                    <button
+                      onClick={() => { setAIMode('local'); setAiModeState('local'); }}
+                      className={`py-3 rounded-xl border-2 font-black uppercase tracking-[0.15em] text-[10px] transition-all ${
+                        aiMode === 'local'
+                          ? 'border-brand-black bg-brand-black text-white'
+                          : 'border-brand-border bg-white text-brand-black/60 hover:border-brand-black/30'
+                      }`}
+                    >
+                      Local (Direct API)
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-brand-black/40 leading-relaxed italic">
+                    {aiMode === 'cloud'
+                      ? 'Keys are encrypted and stored on the server. Requires backend running.'
+                      : 'Keys are stored in your browser. Works offline without backend.'}
+                  </p>
+                </div>
+
                 <div className="space-y-4">
                   <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50">Active Provider</label>
                   <div className="grid grid-cols-4 gap-2">
@@ -557,21 +623,44 @@ export default function App() {
                 <div className="space-y-4">
                   <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 flex items-center gap-2">
                     <Sparkles size={14} />
-                    {state.apiProvider.toUpperCase()} Secrets
+                    {state.apiProvider.toUpperCase()} API Key
+                    {apiKeyStatus[state.apiProvider] && (
+                      <span className="text-green-500 text-[8px] ml-2">✓ Configured</span>
+                    )}
                   </label>
                   <input 
                     type="password"
-                    value={state.apiKeys[state.apiProvider]}
-                    onChange={(e) => {
-                      const newKeys = { ...state.apiKeys, [state.apiProvider]: e.target.value };
-                      setState(prev => ({ ...prev, apiKeys: newKeys }));
-                    }}
+                    id={`api-key-${state.apiProvider}`}
                     placeholder={`Enter ${state.apiProvider} API key...`}
                     className="w-full px-5 py-4 bg-brand-paper border border-brand-border rounded-xl font-mono text-sm focus:border-brand-black outline-none shadow-inner transition-all"
                   />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        const input = document.getElementById(`api-key-${state.apiProvider}`) as HTMLInputElement;
+                        if (input?.value) {
+                          handleSaveApiKey(state.apiProvider, input.value);
+                          input.value = '';
+                        }
+                      }}
+                      className="flex-1 py-3 bg-brand-black text-white font-black uppercase tracking-[0.2em] text-[10px] hover:opacity-90 transition-all rounded-xl"
+                    >
+                      Save Securely
+                    </button>
+                    {apiKeyStatus[state.apiProvider] && (
+                      <button
+                        onClick={() => apiKeyServiceRef.current?.deleteApiKey(state.apiProvider)}
+                        className="px-4 py-3 border border-red-300 text-red-500 font-black uppercase tracking-[0.2em] text-[10px] hover:bg-red-50 transition-all rounded-xl"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                   <div className="p-5 bg-brand-paper border-l-4 border-brand-black rounded-r-xl">
                     <p className="text-[11px] text-brand-black/60 leading-relaxed italic">
-                      MuseRock operates as a purely local tool. Your credentials persist only in your browser's encrypted local storage.
+                      {aiMode === 'cloud'
+                        ? 'Your API key is encrypted and stored securely on the server. It is never stored in your browser\'s local storage.'
+                        : 'Your API key is stored in your browser\'s local storage. This is fine for local-only use. Switch to Cloud mode for server-side encryption.'}
                     </p>
                   </div>
                 </div>

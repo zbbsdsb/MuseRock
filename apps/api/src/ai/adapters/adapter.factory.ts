@@ -2,6 +2,7 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { ModelAdapter, ModelOptions, ModelResponse } from './base.adapter';
 import { OpenAIAdapter } from './openai.adapter';
 import { GeminiAdapter } from './gemini.adapter';
+import { AnthropicAdapter } from './anthropic.adapter';
 
 export type ProviderType = 'openai' | 'gemini' | 'anthropic';
 
@@ -16,6 +17,7 @@ export class ModelAdapterFactory {
   private initializeAdapters(): void {
     const openaiKey = process.env.OPENAI_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
     if (openaiKey) {
       this.adapters.set('openai', new OpenAIAdapter({ apiKey: openaiKey }));
@@ -23,6 +25,10 @@ export class ModelAdapterFactory {
 
     if (geminiKey) {
       this.adapters.set('gemini', new GeminiAdapter({ apiKey: geminiKey }));
+    }
+
+    if (anthropicKey) {
+      this.adapters.set('anthropic', new AnthropicAdapter({ apiKey: anthropicKey }));
     }
   }
 
