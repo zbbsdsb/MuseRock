@@ -245,9 +245,13 @@ The memory system is the heart of MuseRock. Currently it's a placebo.
 |----|-------|-----|--------|--------|
 | QF-1 | `generateId()` collision risk | Replace with `uuid.v4()` | 30 min | ✅ Done |
 | QF-2 | Memory search uses `String.includes()` | Will be fixed by P2-1 vector search | 5 min | Pending |
-| QF-3 | No unit tests anywhere | Add Vitest + initial test scaffolding | 1 day | Pending |
+| QF-3 | No unit tests anywhere | Add Vitest + initial test scaffolding | 1 day | ✅ Done |
 | QF-4 | Frontend `App.tsx` is monolithic (~700+ lines) | Refactor into modules | 2 days | Pending |
 | QF-5 | README "Quick Start" says `npm run dev` | Document correct startup procedure | 30 min | Pending |
+| QF-6 | CI scripts (`build:web`, `build:api`, `typecheck`) missing | Added to root package.json | 30 min | ✅ Done |
+| QF-7 | `App.tsx` has dead import (`AIService` from old ai.ts) | Removed dead imports, updated types | 30 min | ✅ Done |
+| QF-8 | `ApiKeysService` uses `process.env` directly (breaks hot reload) | Switched to `ConfigService` | 30 min | ✅ Done |
+| QF-9 | `ApprenticeService` uses `while(true)` polling | Replaced with event-driven wake-up pattern | 1 hour | ✅ Done |
 
 ---
 

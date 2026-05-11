@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createCipheriv, createDecipheriv, randomBytes, scrypt } from 'crypto';
@@ -10,18 +11,21 @@ const scryptAsync = promisify(scrypt);
 @Injectable()
 export class ApiKeysService {
   private readonly algorithm = 'aes-256-gcm';
-  private masterKey: Buffer;
 
   constructor(
     @InjectRepository(ApiKey)
     private readonly apiKeyRepository: Repository<ApiKey>,
+    private readonly configService: ConfigService,
   ) {
-    // Master key should be from environment variable
-    const masterKeyHex = process.env.API_KEY_ENCRYPTION_KEY;
+    const masterKeyHex = this.configService.get<string>('API_KEY_ENCRYPTION_KEY');
     if (!masterKeyHex) {
       throw new Error('API_KEY_ENCRYPTION_KEY environment variable is required');
     }
-    this.masterKey = Buffer.from(masterKeyHex, 'hex');
+  }
+
+  private getMasterKey(): Buffer {
+    const masterKeyHex = this.configService.get<string>('API_KEY_ENCRYPTION_KEY');
+    return Buffer.from(masterKeyHex, 'hex');
   }
 
   async saveApiKey(userId: string, provider: ApiProvider, apiKey: string): Promise<ApiKey> {
@@ -95,7 +99,7 @@ export class ApiKeysService {
 
   private async encrypt(text: string): Promise<{ encrypted: string; iv: string }> {
     const iv = randomBytes(16);
-    const cipher = createCipheriv(this.algorithm, this.masterKey, iv);
+    const cipher = createCipheriv(this.algorithm, this.getMasterKey(), iv);
     
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
@@ -113,7 +117,7 @@ export class ApiKeysService {
     const encryptedBuffer = Buffer.from(encrypted.slice(0, -32), 'hex');
     const authTag = Buffer.from(encrypted.slice(-32), 'hex');
     
-    const decipher = createDecipheriv(this.algorithm, this.masterKey, ivBuffer);
+    const decipher = createDecipheriv(this.algorithm, this.getMasterKey(), ivBuffer);
     decipher.setAuthTag(authTag);
     
     let decrypted = decipher.update(encryptedBuffer.toString('hex'), 'hex', 'utf8');

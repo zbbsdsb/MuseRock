@@ -95,9 +95,17 @@
     background-color: var(--color-brand-text-dark);
     opacity: 0.05;
   }
+  .dark .bg-brand-black\/10 {
+    background-color: var(--color-brand-text-dark);
+    opacity: 0.1;
+  }
   .dark .hover\:bg-brand-black\/5:hover {
     background-color: var(--color-brand-text-dark);
     opacity: 0.05;
+  }
+  .dark .hover\:bg-brand-black\/10:hover {
+    background-color: var(--color-brand-text-dark);
+    opacity: 0.1;
   }
   .dark .placeholder-brand-black\/10::placeholder {
     color: var(--color-brand-text-muted-dark);
@@ -106,7 +114,25 @@
   .dark .bg-white {
     background-color: var(--color-brand-paper-dark);
   }
+  .dark .bg-white\/50 {
+    background-color: var(--color-brand-paper-dark);
+    opacity: 0.5;
+  }
+  .dark .hover\:bg-white\/10:hover {
+    background-color: var(--color-brand-text-dark);
+    opacity: 0.1;
+  }
+  .dark .hover\:bg-white\/50:hover {
+    background-color: var(--color-brand-text-muted-dark);
+    opacity: 0.5;
+  }
   .dark .shadow-\[24px_24px_0px_0px_rgba\(26\,26\,26\,0\.1\)\] {
     box-shadow: 24px 24px 0px 0px rgba(255, 255, 255, 0.05);
+  }
+  .dark .hover\:shadow-md:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
+  }
+  .dark .hover\:shadow-lg:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
   }
 }

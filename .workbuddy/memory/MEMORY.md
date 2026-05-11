@@ -62,8 +62,21 @@ MuseRock 支持 **Local / Cloud** 双模式，通过 Settings 面板切换：
 2. ~~前端 API Key 存 localStorage → 已改为双模式架构~~ ✅ 已解决
 3. ~~web/services/ai.ts OpenAI/Anthropic 为 stub → 已全部可用~~ ✅ 已解决
 4. ComplianceService OWASP 检查全部 mock → 接真实扫描工具
-5. processJobs 用 while(true) 轮询 → 改用事件驱动或 Bull/BullMQ
+5. ~~processJobs 用 while(true) 轮询 → 改用事件驱动~~ ✅ 已写入 TRAE_EXECUTION_PLAN Task 3-1
 6. ~~缺 .env.example 文件 → 影响贡献者上手~~ ✅ 已解决
-7. 前端暗色主题（store 有 theme 但未完全应用）
+7. 前端暗色主题（store 有 theme 但未完全应用）— 已写入 TRAE_EXECUTION_PLAN Task 2-1/2-2
 8. 灵感地形图/动机花园 UI 组件未建
-9. 缺 GitHub Actions CI
+9. ~~缺 GitHub Actions CI~~ — ci.yml 已存在，但脚本不匹配根 package.json → 已写入 TRAE_EXECUTION_PLAN Task 0-1
+
+## 2026-05-11 审计新发现
+
+- **CI 脚本不匹配**：ci.yml 引用 `build:web`/`build:api`/`typecheck`，根 package.json 中不存在
+- **非 monorepo 结构**：根 package.json 就是前端配置，无 workspaces，apps/web 无独立 package.json
+- **旧代码残留**：App.tsx 第 35 行仍 import 旧的 `AIService`/`ApiKeyService`（未使用）
+- **API dev 无热重载**：`apps/api/package.json` dev 脚本为 `tsc && node dist/main.js`
+- **API test 占位符**：`apps/api/package.json` test 脚本为 `echo "Error" && exit 1`
+- **auth.service.ts setInterval 泄漏**：无 clearInterval，无 OnModuleDestroy
+- **暗色主题 bg-white 覆盖脆弱**：App.tsx 大量硬编码 `bg-white`，靠 CSS `.dark .bg-white` 覆盖
+- **暗色主题 hover 失效**：`.dark .bg-brand-black/5` 覆盖为不透明色而非半透明
+- **空 CSS 规则**：`.dark .shadow-[...]` 选择器存在但规则体为空
+- 所有以上问题已写入 `docs/TRAE_EXECUTION_PLAN.md` 供 Trae 执行

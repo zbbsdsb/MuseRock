@@ -32,8 +32,7 @@ import {
 import { useThemeStore } from './stores/themeStore';
 import ReactMarkdown from 'react-markdown';
 import { MuseRockState, MuseRockMessage, ApiProvider, OasisUser } from './types';
-import { AIService, ApiKeyService } from './services/ai';
-import { createAIService, createApiKeyService, getAIMode, setAIMode, type AIMode } from './services/ai-provider';
+import { createAIService, createApiKeyService, getAIMode, setAIMode, type AIMode, type LocalAIService, type CloudAIService } from './services/ai-provider';
 import { auth, loginWithGoogle, db } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -92,9 +91,9 @@ export default function App() {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [apiKeyStatus, setApiKeyStatus] = useState<{[key: string]: boolean}>({});
-  const [aiMode, setAiModeState] = useState<AIMode>(getAIMode);
-  const aiServiceRef = useRef<AIService | null>(null);
-  const apiKeyServiceRef = useRef<ApiKeyService | null>(null);
+  const [aiMode, setAiModeState] = useState<AIMode>(getAIMode());
+  const aiServiceRef = useRef<LocalAIService | CloudAIService | null>(null);
+  const apiKeyServiceRef = useRef<ReturnType<typeof createApiKeyService> | null>(null);
   const { isDark, toggleTheme } = useThemeStore();
 
   useEffect(() => {

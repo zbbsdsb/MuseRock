@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,10 +9,12 @@ import { Apprentice } from './entities/apprentice.entity';
 import { Job } from './entities/job.entity';
 
 @Injectable()
-export class ApprenticeService {
+export class ApprenticeService implements OnModuleDestroy {
   private jobQueue: { id: string; priority: number }[] = [];
   private activeJobs: Set<string> = new Set();
   private maxConcurrentJobs = 3;
+  private isRunning = true;
+  private pendingResolve: (() => void) | null = null;
 
   constructor(
     @InjectRepository(Apprentice)
@@ -23,8 +25,14 @@ export class ApprenticeService {
     private readonly aiService: AIService,
     private readonly observabilityService: ObservabilityService,
   ) {
-    // Start job processor
     this.processJobs();
+  }
+
+  onModuleDestroy() {
+    this.isRunning = false;
+    if (this.pendingResolve) {
+      this.pendingResolve();
+    }
   }
 
   async createApprentice(apprenticeData: {
@@ -109,6 +117,9 @@ export class ApprenticeService {
       return a.id.localeCompare(b.id);
     });
 
+    // Wake up the job processor
+    this.wakeUp();
+
     return savedJob;
   }
 
@@ -139,20 +150,34 @@ export class ApprenticeService {
   }
 
   private async processJobs() {
-    while (true) {
-      if (this.jobQueue.length > 0 && this.activeJobs.size < this.maxConcurrentJobs) {
+    while (this.isRunning) {
+      while (this.jobQueue.length > 0 && this.activeJobs.size < this.maxConcurrentJobs) {
         const jobItem = this.jobQueue.shift();
         if (jobItem) {
           const jobId = jobItem.id;
           this.activeJobs.add(jobId);
           this.executeJob(jobId).finally(() => {
             this.activeJobs.delete(jobId);
+            this.wakeUp();
           });
         }
       }
 
-      // Sleep for a short time before checking again
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await this.waitForJob();
+    }
+  }
+
+  private waitForJob(): Promise<void> {
+    return new Promise(resolve => {
+      this.pendingResolve = resolve;
+    });
+  }
+
+  private wakeUp(): void {
+    if (this.pendingResolve) {
+      const resolve = this.pendingResolve;
+      this.pendingResolve = null;
+      resolve();
     }
   }
 
