@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { AuditEvent } from '../types/mcp.types';
 
 @Injectable()
@@ -46,6 +47,6 @@ export class AuditService {
   }
 
   private generateId(): string {
-    return `audit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `audit-${uuidv4()}`;
   }
 }

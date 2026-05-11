@@ -1,4 +1,5 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { PluginManifest } from '../types/mcp.types';
 import { PluginValidator } from './plugin.validator';
 
@@ -85,6 +86,6 @@ export class PluginManager {
   }
 
   private generateId(): string {
-    return `plugin-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `plugin-${uuidv4()}`;
   }
 }

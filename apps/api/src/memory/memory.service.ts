@@ -1,4 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 import { WorkingMemory } from './layers/working.memory';
 import { EpisodicMemory } from './layers/episodic.memory';
 import { ContextualMemory } from './layers/contextual.memory';
@@ -223,7 +224,7 @@ export class MemoryService {
   }
 
   private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return uuidv4();
   }
 
   private calculateScore(item: MemoryItem, query: string): number {

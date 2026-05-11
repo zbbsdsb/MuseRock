@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 import { MemoryService } from '../memory/memory.service';
 import { AIService } from '../ai/ai.service';
 import { ObservabilityService } from '../observability/observability.service';
@@ -126,7 +127,7 @@ export class ApprenticeService {
     }
 
     if (filters?.status) {
-      query.where('job.status = :status', { status: filters.status });
+      query.andWhere('job.status = :status', { status: filters.status });
     }
 
     return await query.orderBy('job.createdAt', 'DESC').getMany();
@@ -262,6 +263,6 @@ export class ApprenticeService {
   }
 
   private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return uuidv4();
   }
 }
