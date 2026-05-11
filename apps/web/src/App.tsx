@@ -117,7 +117,8 @@ export default function App() {
     // Check if user is already authenticated with Oasis
     const checkOasisAuth = async () => {
       try {
-        const response = await fetch('http://localhost:3001/auth/userinfo', {
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const response = await fetch(`${apiUrl}/auth/userinfo`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -203,7 +204,8 @@ export default function App() {
 
   const handleOasisLogout = async () => {
     try {
-      await fetch('http://localhost:3001/auth/logout', {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      await fetch(`${apiUrl}/auth/logout`, {
         method: 'POST',
         credentials: 'include',
       });

@@ -18,7 +18,8 @@ export function ContinueWithOasisButton({
     setIsLoading(true);
     try {
       // Call backend OAuth endpoint
-      window.location.href = 'http://localhost:3001/auth/oasis';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      window.location.href = `${apiUrl}/auth/oasis`;
     } catch (error) {
       if (onError) {
         onError(error as Error);
