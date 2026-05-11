@@ -10,6 +10,7 @@ import { ObservabilityMiddleware } from './observability/observability.service';
 import { ComplianceModule } from './compliance/compliance.module';
 import { HealthModule } from './health/health.module';
 import { AIModule } from './ai/ai.module';
+import { ApiKeysModule } from './api-keys/api-keys.module';
 import { TrpcModule } from './trpc/trpc.module';
 import { QueueModule } from './queue/queue.module';
 import { APP_ROUTER_PROVIDER } from './trpc/trpc.providers';
@@ -31,6 +32,7 @@ import { APP_ROUTER_PROVIDER } from './trpc/trpc.providers';
     ComplianceModule,
     HealthModule,
     AIModule,
+    ApiKeysModule,
     TrpcModule,
     QueueModule,
   ],

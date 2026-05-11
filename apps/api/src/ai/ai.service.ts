@@ -1,182 +1,173 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-import { ModelAdapterFactory, ProviderType } from './adapters/adapter.factory';
-import { ModelOptions, ModelResponse } from './adapters/base.adapter';
-import { PromptRegistryService, PromptTemplate } from './prompt-registry.service';
-import { ObservabilityService } from '../observability/observability.service';
-
-export interface GenerationRequest {
-  prompt: string;
-  role: string;
-  provider?: ProviderType;
-  options?: ModelOptions;
-  context?: Record<string, any>;
-  templateId?: string;
-  variables?: Record<string, string>;
-}
-
-export interface TemplateGenerationRequest {
-  templateId: string;
-  variables: Record<string, string>;
-  userInput: string;
-  provider?: ProviderType;
-  options?: ModelOptions;
-  context?: Record<string, any>;
-}
+import { GoogleGenAI } from '@google/generative-ai';
+import { OpenAI } from 'openai';
+import { ApiProvider } from '../api-keys/entities/api-key.entity';
 
 @Injectable()
 export class AIService {
-  constructor(
-    private adapterFactory: ModelAdapterFactory,
-    private promptRegistry: PromptRegistryService,
-    private observabilityService: ObservabilityService,
-  ) {}
-
-  async generateContent(request: GenerationRequest): Promise<ModelResponse> {
-    const { prompt, role, provider = 'openai', options = {}, templateId, variables } = request;
-
-    let systemPrompt: string;
-
-    if (templateId && variables) {
-      systemPrompt = this.promptRegistry.renderPrompt(templateId, {
-        variables,
-        context: request.context,
-      });
-    } else {
-      systemPrompt = this.getSystemPromptForRole(role, request.context);
-    }
-
-    try {
-      const response = await this.adapterFactory.generateContent(
-        provider,
-        prompt,
-        systemPrompt,
-        options,
-      );
-
-      if (response.tokensUsed) {
-        const totalTokens = response.tokensUsed.prompt + (response.tokensUsed.completion || 0);
-        this.observabilityService.recordAiTokens(provider, options.model || 'unknown', totalTokens);
-      }
-
-      return response;
-    } catch (error) {
-      throw new HttpException(
-        `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+  async generateContent(
+    provider: ApiProvider,
+    apiKey: string,
+    prompt: string,
+    systemPrompt: string,
+    options: {
+      model?: string;
+      temperature?: number;
+      maxTokens?: number;
+    } = {},
+  ): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+    switch (provider) {
+      case 'gemini':
+        return this.generateWithGemini(apiKey, prompt, systemPrompt, options);
+      case 'openai':
+        return this.generateWithOpenAI(apiKey, prompt, systemPrompt, options);
+      case 'anthropic':
+        return this.generateWithAnthropic(apiKey, prompt, systemPrompt, options);
+      default:
+        throw new HttpException(`Unsupported provider: ${provider}`, HttpStatus.BAD_REQUEST);
     }
   }
 
-  async generateStructuredContent(request: GenerationRequest): Promise<ModelResponse> {
-    return this.generateContent({
-      ...request,
-      options: {
-        ...request.options,
-        responseFormat: 'json',
+  async getInspiration(
+    provider: ApiProvider,
+    apiKey: string,
+    context: string,
+    type: string,
+  ): Promise<string> {
+    const prompt = `Context: ${context}\n\nTask: Provide creation assistance for a creator based on this context. Focus on ${type}. Keep it brief, evocative, and high-impact. Avoid clichés.`;
+    const systemPrompt = 'You are MuseRock, an elite creation assistant. You provide sharp, non-obvious insights and materials for creators across various disciplines.';
+    
+    const result = await this.generateContent(provider, apiKey, prompt, systemPrompt, {
+      temperature: 0.8,
+    });
+    
+    return result.content;
+  }
+
+  async sourceAssets(
+    provider: ApiProvider,
+    apiKey: string,
+    query: string,
+  ): Promise<string> {
+    const prompt = `Search Query: ${query}\n\nTask: Act as a creation assistant. Find 3-5 high-quality references, data points, or sources relevant to this query. Categorize them and explain why they are valuable for a creator.`;
+    const systemPrompt = 'You are MuseRock Creation Assistant. You find deep references (scientific, historical, artistic) that others miss for creators across various disciplines.';
+    
+    const result = await this.generateContent(provider, apiKey, prompt, systemPrompt, {
+      temperature: 0.3,
+    });
+    
+    return result.content;
+  }
+
+  private async generateWithGemini(
+    apiKey: string,
+    prompt: string,
+    systemPrompt: string,
+    options: { model?: string; temperature?: number; maxTokens?: number },
+  ): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+    const genAI = new GoogleGenAI({ apiKey });
+    const model = genAI.getGenerativeModel({
+      model: options.model || 'gemini-1.5-flash',
+    });
+
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      systemInstruction: systemPrompt,
+      generationConfig: {
+        temperature: options.temperature ?? 0.7,
+        maxOutputTokens: options.maxTokens ?? 2048,
       },
     });
+
+    const response = await result.response;
+    const content = response.text();
+    
+    // Estimate tokens (Gemini doesn't provide exact token counts in the SDK)
+    const promptTokens = Math.ceil(prompt.length / 4);
+    const completionTokens = Math.ceil(content.length / 4);
+    
+    return {
+      content,
+      tokensUsed: {
+        prompt: promptTokens,
+        completion: completionTokens,
+        total: promptTokens + completionTokens,
+      },
+    };
   }
 
-  async generateFromTemplate(request: TemplateGenerationRequest): Promise<ModelResponse> {
-    const { templateId, variables, userInput, provider = 'openai', options = {}, context } = request;
+  private async generateWithOpenAI(
+    apiKey: string,
+    prompt: string,
+    systemPrompt: string,
+    options: { model?: string; temperature?: number; maxTokens?: number },
+  ): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+    const openai = new OpenAI({ apiKey });
 
-    const missingVars = this.promptRegistry.validateVariables(templateId, variables);
-    if (missingVars.length > 0) {
-      throw new HttpException(
-        `Missing required variables: ${missingVars.join(', ')}`,
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    const systemPrompt = this.promptRegistry.renderPrompt(templateId, {
-      variables,
-      context,
+    const response = await openai.chat.completions.create({
+      model: options.model || 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt },
+      ],
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens ?? 2048,
     });
 
-    const schema = this.promptRegistry.getSchema(templateId);
-    
-    try {
-      const response = await this.adapterFactory.generateContent(
-        provider,
-        userInput,
-        systemPrompt,
-        {
-          ...options,
-          responseFormat: 'json',
-        },
-      );
+    const content = response.choices[0]?.message?.content || '';
+    const usage = response.usage;
 
-      if (response.tokensUsed) {
-        const totalTokens = response.tokensUsed.prompt + (response.tokensUsed.completion || 0);
-        this.observabilityService.recordAiTokens(provider, options.model || 'unknown', totalTokens);
-      }
+    return {
+      content,
+      tokensUsed: {
+        prompt: usage?.prompt_tokens || 0,
+        completion: usage?.completion_tokens || 0,
+        total: usage?.total_tokens || 0,
+      },
+    };
+  }
 
-      return response;
-    } catch (error) {
+  private async generateWithAnthropic(
+    apiKey: string,
+    prompt: string,
+    systemPrompt: string,
+    options: { model?: string; temperature?: number; maxTokens?: number },
+  ): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: options.model || 'claude-3-5-sonnet-20241022',
+        max_tokens: options.maxTokens ?? 2048,
+        temperature: options.temperature ?? 0.7,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
       throw new HttpException(
-        `AI generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        `Anthropic API error: ${error}`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
-  }
 
-  private getSystemPromptForRole(role: string, context?: Record<string, any>): string {
-    const basePrompts: Record<string, string> = {
-      researcher: `You are MuseRock's Researcher. Your responsibilities are:
-1. Explore topics broadly first, then narrow down
-2. Identify high-value inspiration directions
-3. Formulate key research questions
-4. Suggest credible source types
-5. Distinguish between facts, assumptions, and unverified clues
-6. Always output in the specified JSON format`,
-      
-      writer: `You are MuseRock's Writer. Your responsibilities are:
-1. Transform briefs, research packages, and feedback into readable drafts
-2. Maintain consistent voice, pacing, and length targets
-3. Cite sources properly when using research references
-4. Include summary, body, open questions, and change log in output
-5. Always output in the specified JSON format`,
-      
-      designer: `You are MuseRock's Designer. Your responsibilities are:
-1. Convert textual themes into visual directions
-2. Provide color palettes, typography, and layout principles
-3. Distinguish between visual concepts, design tokens, and risks
-4. Never overwrite Writer's narrative intent
-5. Always output in the specified JSON format`,
-      
-      musician: `You are MuseRock's Musician. Your responsibilities are:
-1. Convert emotional beats and structure into musical concepts
-2. Provide mood arcs, tempo ranges, and instrumentation suggestions
-3. Create cue sheets for different sections
-4. Ensure musical direction aligns with visual and narrative goals
-5. Always output in the specified JSON format`,
+    const data = await response.json();
+    const content = data.content?.[0]?.text || '';
+    const usage = data.usage;
+
+    return {
+      content,
+      tokensUsed: {
+        prompt: usage?.input_tokens || 0,
+        completion: usage?.output_tokens || 0,
+        total: (usage?.input_tokens || 0) + (usage?.output_tokens || 0),
+      },
     };
-
-    const basePrompt = basePrompts[role] || basePrompts.writer;
-    
-    if (context) {
-      const contextStr = Object.entries(context)
-        .map(([key, value]) => `${key}: ${JSON.stringify(value)}`)
-        .join('\n');
-      return `${basePrompt}\n\nAdditional context:\n${contextStr}`;
-    }
-    
-    return basePrompt;
-  }
-
-  getAvailableProviders(): ProviderType[] {
-    return this.adapterFactory.getAvailableProviders();
-  }
-
-  getPromptTemplates(): PromptTemplate[] {
-    return this.promptRegistry.getAllPrompts();
-  }
-
-  getPromptTemplateById(id: string): PromptTemplate | undefined {
-    return this.promptRegistry.getPromptById(id);
-  }
-
-  createPromptTemplate(prompt: Omit<PromptTemplate, 'id' | 'createdAt' | 'updatedAt' | 'version'>): PromptTemplate {
-    return this.promptRegistry.createPrompt(prompt);
   }
 }
