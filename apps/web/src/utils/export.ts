@@ -11,23 +11,26 @@ export async function exportToMarkdown(options: ExportOptions): Promise<void> {
 }
 
 export async function exportToWord(options: ExportOptions): Promise<void> {
-  const { Document, Packer, Paragraph, TextRun } = await import('docx');
+  const { Document, Packer, Paragraph, TextRun, SectionType } = await import('docx');
   
-  const doc = new Document();
-  
-  doc.addSection({
-    children: [
-      new Paragraph({
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
         children: [
-          new TextRun({
-            text: options.title || 'Untitled Document',
-            bold: true,
-            size: 32,
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: options.title || 'Untitled Document',
+                bold: true,
+                size: 32,
+              }),
+            ],
+            spacing: { after: 200 },
           }),
+          ...parseContentToParagraphs(options.content),
         ],
-        spacing: { after: 200 },
-      }),
-      ...parseContentToParagraphs(options.content),
+      },
     ],
   });
   

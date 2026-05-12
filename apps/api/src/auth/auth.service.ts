@@ -1,4 +1,4 @@
-import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, OnModuleDestroy, HttpException, HttpStatus } from '@nestjs/common';
 import { OasisOAuthService, OAuthTokens, OasisUserInfo } from '../oasis/oauth/oasis-oauth.service';
 import { SessionService } from '../oasis/oauth/session.service';
 
@@ -11,14 +11,21 @@ export interface OasisUser {
 }
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleDestroy {
   private stateStore: Map<string, { state: string; verifier: string; createdAt: number }> = new Map();
+  private cleanupInterval: NodeJS.Timeout;
 
   constructor(
     private readonly oasisOAuthService: OasisOAuthService,
     private readonly sessionService: SessionService,
   ) {
-    setInterval(() => this.cleanupExpiredStates(), 5 * 60 * 1000);
+    this.cleanupInterval = setInterval(() => this.cleanupExpiredStates(), 5 * 60 * 1000);
+  }
+
+  onModuleDestroy() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+    }
   }
 
   private cleanupExpiredStates() {

@@ -247,19 +247,22 @@ The memory system is the heart of MuseRock. Currently it's a placebo.
 | QF-2 | Memory search uses `String.includes()` | Will be fixed by P2-1 vector search | 5 min | Pending |
 | QF-3 | No unit tests anywhere | Add Vitest + initial test scaffolding | 1 day | ✅ Done |
 | QF-4 | Frontend `App.tsx` is monolithic (~700+ lines) | Refactor into modules | 2 days | Pending |
-| QF-5 | README "Quick Start" says `npm run dev` | Document correct startup procedure | 30 min | Pending |
+| QF-5 | README "Quick Start" says `npm run dev` | Document correct startup procedure | 30 min | ✅ Done |
 | QF-6 | CI scripts (`build:web`, `build:api`, `typecheck`) missing | Added to root package.json | 30 min | ✅ Done |
 | QF-7 | `App.tsx` has dead import (`AIService` from old ai.ts) | Removed dead imports, updated types | 30 min | ✅ Done |
 | QF-8 | `ApiKeysService` uses `process.env` directly (breaks hot reload) | Switched to `ConfigService` | 30 min | ✅ Done |
 | QF-9 | `ApprenticeService` uses `while(true)` polling | Replaced with event-driven wake-up pattern | 1 hour | ✅ Done |
+| QF-10 | `auth.service.ts` setInterval leak | Added `OnModuleDestroy` + cleanup | 30 min | ✅ Done |
+| QF-11 | API dev script no hot reload | Changed to `tsx watch` for hot reload | 15 min | ✅ Done |
+| QF-12 | Dark theme CSS variable mismatch | Rewrote CSS using proper Tailwind v4 dark mode | 1 hour | ✅ Done |
 
 ---
 
-## Recommended Execution Order (Updated)
+## Recommended Execution Order (Updated: 2026-05-12)
 
 ```
 Week 1:  ✅ P0-1 (.env.example) + ✅ P0-3 (hardcoded URLs) + ✅ P1-1 (API key dual-mode) + ✅ P1-2 (Anthropic) + ✅ P1-3 (query bug) + ✅ QF-1
-Week 2:  P0-2 (CI pipeline) + QF-5 (README fix)
+Week 2:  ✅ QF-5 (README fix) + ✅ QF-6/7/8/9/10/11 + CI pipeline
 Week 3-8: P2-1 (PostgreSQL) + P2-2 (Redis) + P2-3 (InspirationMap)
 Week 8-14: P3-1 (BullMQ) + P3-2 (MotivationGarden) + P3-3 (Style Switcher)
 Week 14+: P4-1 (OWASP) + P4-2 (Dark theme) + P4-3 (OpenTelemetry)

@@ -49,23 +49,50 @@ MuseRock is not another "writing app." It is a high-octane collaboration engine 
 git clone https://github.com/zbbsdsb/muserock.git
 cd muserock
 
-# Install dependencies
+# Install root dependencies
 npm install
 
-# Start development server
-npm run dev
+# Install web app dependencies
+cd apps/web && npm install
+
+# Install API dependencies
+cd ../api && npm install
+
+# Return to root and start development
+cd ../..
 ```
 
-The application will be available at `http://localhost:3000`.
+### Running the Application
+
+**Development Mode (both apps):**
+```bash
+npm run dev          # Start web app at http://localhost:3000
+npm run dev:api     # Start API server at http://localhost:3001
+```
+
+**Production Build:**
+```bash
+npm run build        # Build web app
+npm run build:api    # Build API server
+```
 
 ### Configuration
 
-1. Open the Muse Configuration panel (press `⌘ + ,` on Mac or `Ctrl + ,` on Windows)
-2. Select your preferred AI provider (Gemini, OpenAI, Anthropic, or Custom)
-3. Enter your API key for the selected provider
-4. Click "Confirm Configuration"
+1. Copy the environment template:
+   ```bash
+   cp apps/web/.env.example apps/web/.env
+   cp apps/api/.env.example apps/api/.env
+   ```
 
-> **Security Note**: API keys are stored securely in your browser's encrypted local storage and are never transmitted to external servers except their respective AI providers.
+2. Open the Muse Configuration panel (press `⌘ + ,` on Mac or `Ctrl + ,` on Windows)
+3. Select your preferred AI provider (Gemini, OpenAI, Anthropic, or Custom)
+4. Enter your API key for the selected provider
+5. Click "Confirm Configuration"
+
+> **Security Note**: MuseRock supports two modes:
+> - **Cloud Mode**: API keys stored securely server-side with AES-256-GCM encryption
+> - **Local Mode**: API keys stored in browser's encrypted local storage
+> Your keys are never transmitted to external servers except their respective AI providers.
 
 ---
 
@@ -108,21 +135,32 @@ The application will be available at `http://localhost:3000`.
 ```
 muserock/
 ├── apps/
-│   └── web/                    # Main web application
+│   ├── api/                    # NestJS Backend API (BFF)
+│   │   ├── src/
+│   │   │   ├── ai/           # AI service adapters (Gemini, OpenAI, Anthropic)
+│   │   │   ├── api-keys/     # API key encryption service
+│   │   │   ├── apprentice/    # AI apprentice job system
+│   │   │   ├── auth/         # OAuth authentication
+│   │   │   ├── memory/       # 5-layer memory system
+│   │   │   ├── mcp/          # Model Context Protocol gateway
+│   │   │   ├── oasis/        # OasisBio integration
+│   │   │   └── ...
+│   │   └── package.json
+│   └── web/                    # React Frontend
 │       ├── src/
-│       │   ├── App.tsx        # Main application component
-│       │   ├── components/    # Reusable UI components
-│       │   ├── services/      # Business logic services
-│       │   ├── stores/        # State management (Zustand)
-│       │   ├── lib/           # Firebase and utilities
-│       │   ├── utils/         # Helper functions
-│       │   └── types/         # TypeScript type definitions
-│       └── index.html
-├── prepare/                    # Project research and planning
+│       │   ├── App.tsx       # Main application component
+│       │   ├── components/   # Reusable UI components
+│       │   ├── services/     # Business logic services
+│       │   ├── stores/       # State management (Zustand)
+│       │   ├── hooks/        # Custom React hooks
+│       │   └── types/        # TypeScript type definitions
+│       └── package.json
+├── .github/
+│   └── workflows/
+│       └── ci.yml            # GitHub Actions CI/CD
+├── docs/                      # Architecture documentation
 ├── planning/                   # Implementation roadmaps
-├── docs/                       # Architecture documentation
-├── infra/                      # Infrastructure as Code (planned)
-└── package.json                # Root workspace configuration
+└── package.json               # Root workspace configuration
 ```
 
 ---

@@ -648,7 +648,7 @@ export default function App() {
                     </button>
                     {apiKeyStatus[state.apiProvider] && (
                       <button
-                        onClick={() => apiKeyServiceRef.current?.deleteApiKey(state.apiProvider)}
+                        onClick={() => apiKeyServiceRef.current?.delete(state.apiProvider)}
                         className="px-4 py-3 border border-red-300 text-red-500 font-black uppercase tracking-[0.2em] text-[10px] hover:bg-red-50 transition-all rounded-xl"
                       >
                         Remove
