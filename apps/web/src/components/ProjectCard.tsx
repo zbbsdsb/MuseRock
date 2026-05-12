@@ -43,7 +43,7 @@ export default function ProjectCard({ project, onSelect, onDelete, onToggleFavor
     >
       <div className="aspect-[4/3] bg-gradient-to-br from-violet-500/10 to-purple-500/10 flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent" />
-        <div className="relative w-14 h-14 rounded-full bg-white/80 shadow-md flex items-center justify-center backdrop-blur-sm">
+        <div className="relative w-14 h-14 rounded-full bg-brand-paper/80 shadow-md flex items-center justify-center backdrop-blur-sm">
           <span className="text-xl font-serif italic text-violet-600">
             {project.name.charAt(0).toUpperCase()}
           </span>
@@ -66,7 +66,7 @@ export default function ProjectCard({ project, onSelect, onDelete, onToggleFavor
                 e.stopPropagation();
                 setShowMenu(!showMenu);
               }}
-              className="p-2 rounded-full text-brand-black/30 hover:text-brand-black hover:bg-white transition-all opacity-0 group-hover:opacity-100"
+              className="p-2 rounded-full text-brand-black/30 hover:text-brand-black hover:bg-brand-paper transition-all opacity-0 group-hover:opacity-100"
             >
               <MoreVertical size={16} />
             </button>
@@ -83,7 +83,7 @@ export default function ProjectCard({ project, onSelect, onDelete, onToggleFavor
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95, y: -10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  className="absolute right-0 top-full mt-2 z-20 bg-white border border-brand-border rounded-xl shadow-xl py-2 min-w-[160px]"
+                  className="absolute right-0 top-full mt-2 z-20 bg-brand-paper border border-brand-border rounded-xl shadow-xl py-2 min-w-[160px]"
                 >
                   <button
                     onClick={(e) => {
@@ -129,19 +129,19 @@ export default function ProjectCard({ project, onSelect, onDelete, onToggleFavor
 
         <div className="flex items-center gap-4">
           {documentCount > 0 && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white text-brand-black/50 text-[10px]">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brand-paper text-brand-black/50 text-[10px]">
               <FileText size={11} />
               <span className="font-black">{documentCount}</span>
             </div>
           )}
           {cardCount > 0 && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white text-brand-black/50 text-[10px]">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brand-paper text-brand-black/50 text-[10px]">
               <Lightbulb size={11} />
               <span className="font-black">{cardCount}</span>
             </div>
           )}
           {imageCount > 0 && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white text-brand-black/50 text-[10px]">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-brand-paper text-brand-black/50 text-[10px]">
               <Image size={11} />
               <span className="font-black">{imageCount}</span>
             </div>

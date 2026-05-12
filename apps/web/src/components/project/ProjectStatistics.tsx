@@ -25,7 +25,7 @@ export function StatsCard({
   color 
 }: StatsCardProps) {
   return (
-    <div className="p-5 rounded-2xl bg-white border border-brand-border">
+    <div className="p-5 rounded-2xl bg-brand-paper border border-brand-border">
       <div className="flex items-start justify-between">
         <div className={`w-10 h-10 rounded-xl ${color} flex items-center justify-center`}>
           <Icon size={18} className="text-white" />
@@ -147,7 +147,7 @@ export default function ProjectStatistics({ project }: ProjectStatisticsProps) {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-5 rounded-2xl bg-white border border-brand-border">
+        <div className="p-5 rounded-2xl bg-brand-paper border border-brand-border">
           <h3 className="text-sm font-serif italic text-brand-black mb-4">
             Element Breakdown
           </h3>
@@ -175,7 +175,7 @@ export default function ProjectStatistics({ project }: ProjectStatisticsProps) {
           </div>
         </div>
         
-        <div className="p-5 rounded-2xl bg-white border border-brand-border">
+        <div className="p-5 rounded-2xl bg-brand-paper border border-brand-border">
           <h3 className="text-sm font-serif italic text-brand-black mb-4">
             Recent Activity
           </h3>

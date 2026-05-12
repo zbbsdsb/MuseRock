@@ -36,7 +36,7 @@ export default function RailNav({
   userPhotoUrl 
 }: RailNavProps) {
   return (
-    <nav className="w-16 border-r border-brand-border flex flex-col items-center py-10 justify-between bg-white z-30 shrink-0">
+    <nav className="w-16 border-r border-brand-border flex flex-col items-center py-10 justify-between bg-brand-paper z-30 shrink-0">
       <div className="space-y-10 flex flex-col items-center">
         <div className="w-10 h-10 flex items-center justify-center select-none">
           <img src={logo} alt="MuseRock Logo" className="w-full h-full object-contain" />

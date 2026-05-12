@@ -73,7 +73,7 @@ export default function Header({
                  initial={{ opacity: 0, y: -10 }}
                  animate={{ opacity: 1, y: 0 }}
                  exit={{ opacity: 0, y: -10 }}
-                 className="absolute top-full right-0 mt-2 bg-white border border-brand-border rounded-xl shadow-xl py-2 z-50 min-w-[180px]"
+                 className="absolute top-full right-0 mt-2 bg-brand-paper border border-brand-border rounded-xl shadow-xl py-2 z-50 min-w-[180px]"
                >
                  <button 
                    onClick={() => {

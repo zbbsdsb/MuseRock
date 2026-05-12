@@ -87,7 +87,7 @@ export default function ProjectSearchAndFilter({
             placeholder="Search projects..."
             value={searchQuery}
             onChange={e => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-brand-border bg-white text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500"
           />
           {searchQuery && (
             <button
@@ -130,7 +130,7 @@ export default function ProjectSearchAndFilter({
               <h3 className="text-sm font-serif italic text-brand-black">Filter Options</h3>
               <button
                 onClick={() => setShowFilters(false)}
-                className="p-1.5 rounded-lg hover:bg-white text-brand-black/40 hover:text-brand-black"
+                className="p-1.5 rounded-lg hover:bg-brand-paper text-brand-black/40 hover:text-brand-black"
               >
                 <X size={16} />
               </button>
@@ -150,7 +150,7 @@ export default function ProjectSearchAndFilter({
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                         localFilters.status === option.value
                           ? 'bg-violet-500 text-white'
-                          : 'bg-brand-offwhite text-brand-black/60 hover:bg-white'
+                          : 'bg-brand-offwhite text-brand-black/60 hover:bg-brand-paper'
                       }`}
                     >
                       {option.label}
@@ -169,7 +169,7 @@ export default function ProjectSearchAndFilter({
                   className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-2 ${
                     localFilters.favorites
                       ? 'bg-amber-500 text-white'
-                      : 'bg-brand-offwhite text-brand-black/60 hover:bg-white'
+                      : 'bg-brand-offwhite text-brand-black/60 hover:bg-brand-paper'
                   }`}
                 >
                   <Star size={12} fill={localFilters.favorites ? 'currentColor' : 'none'} />
@@ -186,7 +186,7 @@ export default function ProjectSearchAndFilter({
               <div className="relative" ref={datePickerRef}>
                 <button
                   onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                  className="w-full px-3 py-2 rounded-lg border border-brand-border bg-white text-xs text-brand-black text-left flex items-center justify-between"
+                  className="w-full px-3 py-2 rounded-lg border border-brand-border bg-brand-paper text-xs text-brand-black text-left flex items-center justify-between"
                 >
                   {localFilters.dateRange ? (
                     <span>
@@ -214,7 +214,7 @@ export default function ProjectSearchAndFilter({
                               setQuickDateRange(range.days);
                               setIsDatePickerOpen(false);
                             }}
-                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-white text-xs text-brand-black/70 hover:text-brand-black transition-colors"
+                            className="w-full text-left px-3 py-2 rounded-lg hover:bg-brand-paper text-xs text-brand-black/70 hover:text-brand-black transition-colors"
                           >
                             {range.label}
                           </button>
@@ -225,7 +225,7 @@ export default function ProjectSearchAndFilter({
                             setLocalFilters({ ...localFilters, dateRange: undefined });
                             setIsDatePickerOpen(false);
                           }}
-                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-white text-xs text-red-500 transition-colors"
+                          className="w-full text-left px-3 py-2 rounded-lg hover:bg-brand-paper text-xs text-red-500 transition-colors"
                         >
                           Clear Date Filter
                         </button>
@@ -239,7 +239,7 @@ export default function ProjectSearchAndFilter({
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-brand-border/50">
               <button
                 onClick={() => setShowFilters(false)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-brand-black/60 hover:text-brand-black hover:bg-white transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-brand-black/60 hover:text-brand-black hover:bg-brand-paper transition-colors"
               >
                 Cancel
               </button>

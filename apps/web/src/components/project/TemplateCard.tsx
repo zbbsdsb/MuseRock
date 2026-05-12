@@ -59,7 +59,7 @@ export default function TemplateCard({
         relative p-5 rounded-2xl border-2 transition-all
         ${isSelected 
           ? 'border-violet-500 bg-violet-50 shadow-lg' 
-          : 'border-brand-border bg-white hover:border-violet-300'}
+          : 'border-brand-border bg-brand-paper hover:border-violet-300'}
       `}
     >
       <div className="flex items-start justify-between mb-4">

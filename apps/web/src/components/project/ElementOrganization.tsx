@@ -174,7 +174,7 @@ export default function ElementOrganization({ elements, onElementsChange }: Elem
               placeholder="Search elements..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 py-2 rounded-xl border border-brand-border bg-white text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 w-48"
+              className="pl-9 pr-4 py-2 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 w-48"
             />
           </div>
           <div className="relative group">
@@ -186,7 +186,7 @@ export default function ElementOrganization({ elements, onElementsChange }: Elem
                 <button
                   key={type}
                   onClick={() => addElement(type)}
-                  className="w-full px-4 py-2 text-left text-sm text-brand-black hover:bg-white transition-colors"
+                  className="w-full px-4 py-2 text-left text-sm text-brand-black hover:bg-brand-paper transition-colors"
                 >
                   {elementTypeLabels[type]}
                 </button>

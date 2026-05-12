@@ -75,7 +75,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-full text-brand-black/40 hover:text-brand-black hover:bg-white transition-all"
+                className="p-2 rounded-full text-brand-black/40 hover:text-brand-black hover:bg-brand-paper transition-all"
               >
                 <X size={20} />
               </button>
@@ -93,7 +93,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
                         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all ${
                           activeTab === tab.id
                             ? 'bg-violet-500 text-white shadow-md'
-                            : 'text-brand-black/60 hover:bg-white hover:text-brand-black'
+                            : 'text-brand-black/60 hover:bg-brand-paper hover:text-brand-black'
                         }`}
                       >
                         <Icon size={16} />
@@ -118,7 +118,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
                               settings.autoSave ? 'bg-violet-500' : 'bg-brand-border'
                             }`}
                           >
-                            <div className={`w-5 h-5 rounded-full bg-white shadow-md transition-all ${
+                            <div className={`w-5 h-5 rounded-full bg-brand-paper shadow-md transition-all ${
                               settings.autoSave ? 'translate-x-6' : 'translate-x-0.5'
                             }`} />
                           </button>
@@ -134,7 +134,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
                               max={300}
                               value={settings.autoSaveInterval}
                               onChange={e => updateSetting('autoSaveInterval', parseInt(e.target.value) || 30)}
-                              className="w-32 px-4 py-2 rounded-xl border border-brand-border bg-white text-sm text-brand-black focus:outline-none focus:border-violet-500"
+                              className="w-32 px-4 py-2 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black focus:outline-none focus:border-violet-500"
                             />
                           </div>
                         )}
@@ -184,7 +184,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
                       <select
                         value={settings.fontFamily}
                         onChange={e => updateSetting('fontFamily', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl border border-brand-border bg-white text-sm text-brand-black focus:outline-none focus:border-violet-500"
+                        className="w-full px-4 py-3 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black focus:outline-none focus:border-violet-500"
                       >
                         <option value="serif">Serif (Playfair Display)</option>
                         <option value="sans-serif">Sans Serif (Inter)</option>
@@ -209,7 +209,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
                             settings.isPublic ? 'bg-violet-500' : 'bg-brand-border'
                           }`}
                         >
-                          <div className={`w-5 h-5 rounded-full bg-white shadow-md transition-all ${
+                          <div className={`w-5 h-5 rounded-full bg-brand-paper shadow-md transition-all ${
                             settings.isPublic ? 'translate-x-6' : 'translate-x-0.5'
                           }`} />
                         </button>
@@ -229,7 +229,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
                             settings.allowComments ? 'bg-violet-500' : 'bg-brand-border'
                           }`}
                         >
-                          <div className={`w-5 h-5 rounded-full bg-white shadow-md transition-all ${
+                          <div className={`w-5 h-5 rounded-full bg-brand-paper shadow-md transition-all ${
                             settings.allowComments ? 'translate-x-6' : 'translate-x-0.5'
                           }`} />
                         </button>
@@ -251,7 +251,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
                       ].map(shortcut => (
                         <div key={shortcut.action} className="flex items-center justify-between py-2 border-b border-brand-border/50">
                           <span className="text-sm text-brand-black">{shortcut.action}</span>
-                          <kbd className="px-3 py-1.5 rounded-lg bg-white border border-brand-border text-xs font-mono text-brand-black/70">
+                          <kbd className="px-3 py-1.5 rounded-lg bg-brand-paper border border-brand-border text-xs font-mono text-brand-black/70">
                             {shortcut.keys}
                           </kbd>
                         </div>
@@ -266,7 +266,7 @@ export default function SettingsModal({ project, isOpen, onClose, onSave }: Sett
             <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-brand-border bg-brand-paper/50">
               <button
                 onClick={onClose}
-                className="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider text-brand-black/60 hover:text-brand-black hover:bg-white transition-all border border-transparent hover:border-brand-border"
+                className="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider text-brand-black/60 hover:text-brand-black hover:bg-brand-paper transition-all border border-transparent hover:border-brand-border"
               >
                 Cancel
               </button>

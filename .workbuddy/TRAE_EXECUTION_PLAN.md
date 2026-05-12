@@ -1,8 +1,12 @@
-# MuseRock MVP 冲刺计划 v3 — Trae 专版
+# MuseRock MVP 冲刺计划 v3 — Trae 专版（Phase A 详细指令）
 
 > **Created**: 2026-05-12 14:15
+> **Updated**: 2026-05-12 14:28
 > **Principle**: Trae 做所有执行工作，WorkBuddy 只做最终验收。每个 Task 独立提交。
 > **策略**: 省 WorkBuddy credit = 把详细指令、代码示例、文件路径全部写在这里，Trae 按文档执行无需额外沟通。
+>
+> 📋 **完整路线图（Phase A → D）**: [`planning/MUSEROCK_EXECUTION_ROADMAP.md`](../planning/MUSEROCK_EXECUTION_ROADMAP.md)
+> 本文件仅包含 **Phase A** 的文件级详细指令。
 
 ---
 

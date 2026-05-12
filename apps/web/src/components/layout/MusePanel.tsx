@@ -20,7 +20,7 @@ function SuggestionCard({ label, onClick }: { label: string; onClick: () => void
   return (
     <button 
       onClick={onClick}
-      className="p-5 border border-brand-border rounded-xl bg-white hover:border-brand-black hover:shadow-lg transition-all text-left flex flex-col gap-3 group"
+      className="p-5 border border-brand-border rounded-xl bg-brand-paper hover:border-brand-black hover:shadow-lg transition-all text-left flex flex-col gap-3 group"
     >
       <div className="w-8 h-8 rounded-lg bg-brand-paper flex items-center justify-center group-hover:scale-110 transition-transform">
         <Sparkles size={14} className="text-brand-accent" />
@@ -49,7 +49,7 @@ export default function MusePanel({
       animate={{ x: 0 }}
       exit={{ x: 400 }}
       transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-      className="w-[400px] bg-white border-l border-brand-border flex flex-col z-20 shadow-2xl"
+      className="w-[400px] bg-brand-paper border-l border-brand-border flex flex-col z-20 shadow-2xl"
     >
       <div className="p-8 border-b border-brand-border">
         <div className="flex items-center justify-between mb-6">

@@ -79,13 +79,17 @@ MuseRock 支持 **Local / Cloud** 双模式，通过 Settings 面板切换：
 v2 的 A-1/A-2/A-3 已在代码中修复，B-1 后端测试文件已存在（5 个）。
 新发现核心问题：**78 处 `bg-white` 硬编码导致暗色主题完全失效**。
 
-Trae 执行计划：`docs/TRAE_EXECUTION_PLAN.md`（v3，详细文件级指令）
-| ID | 任务 | 预计 |
-|-----|------|------|
-| T1 | 78 处 bg-white → bg-brand-paper（14 文件） | 2h |
-| T2 | index.css L68-83 opacity 残留 → rgba() | 30min |
-| T3 | 后端测试验证 + 去重 | 30min |
-| T4 | 前端 store 测试验证 | 15min |
+**完整路线图**：`planning/MUSEROCK_EXECUTION_ROADMAP.md`（Phase A → D）
+**Phase A 详细指令**：`.workbuddy/TRAE_EXECUTION_PLAN.md`（文件级 Trae 指令）
+
+| Phase | 内容 | 预计 | 状态 |
+|-------|------|------|------|
+| A（本周） | 暗色主题 + 测试 + CI（T1-T6） | 4h | 🔨 Trae 执行中 |
+| B（下周） | Creative Loop 状态机 + Muse Engine 卡片化 + Landing Page + GitHub Pages | ~8h | 📋 待启动 |
+| C（第三周） | Reflection Log + README 科学表达重写 | ~3h | 📋 待启动 |
+| D（v0.2+） | Incubation/Convergence/Integration/Astro 官网 | 远期 | 📋 规划中 |
+
+**分工策略**：Trae 做所有执行工作，WorkBuddy 只做规划和最终验收。
 | T5 | CI codeql-action v2→v3 | 10min |
 | T6 | 本地 CI 全流程验证 | 30min |
 

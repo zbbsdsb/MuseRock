@@ -30,7 +30,7 @@ export default function ProjectDetail({ project, activeTab, onTabChange, onBack 
               project.elements.map((element) => (
                 <div
                   key={element.id}
-                  className="flex items-center gap-3 p-3 rounded-full hover:bg-white transition-all cursor-pointer group border border-transparent hover:border-brand-border"
+                  className="flex items-center gap-3 p-3 rounded-full hover:bg-brand-paper transition-all cursor-pointer group border border-transparent hover:border-brand-border"
                 >
                   <div className="w-8 h-8 rounded-full bg-brand-paper flex items-center justify-center group-hover:scale-110 transition-transform">
                     {element.type === 'document' && <FileText size={14} className="text-blue-500" />}
@@ -47,7 +47,7 @@ export default function ProjectDetail({ project, activeTab, onTabChange, onBack 
 
         <button
           onClick={onBack}
-          className="mt-4 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-white text-brand-black/60 hover:text-brand-black hover:bg-brand-border transition-all border border-brand-border"
+          className="mt-4 w-full flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-brand-paper text-brand-black/60 hover:text-brand-black hover:bg-brand-border transition-all border border-brand-border"
         >
           <ChevronLeft size={16} />
           <span className="text-xs font-black uppercase tracking-widest">Back to Projects</span>

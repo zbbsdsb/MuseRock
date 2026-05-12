@@ -55,7 +55,7 @@ export default function NewProjectCard({ onCreate }: NewProjectCardProps) {
               setIsCreating(false);
               setProjectName('');
             }}
-            className="p-2.5 rounded-full text-brand-black/50 hover:text-brand-black hover:bg-white transition-all"
+            className="p-2.5 rounded-full text-brand-black/50 hover:text-brand-black hover:bg-brand-paper transition-all"
           >
             <X size={16} />
           </button>

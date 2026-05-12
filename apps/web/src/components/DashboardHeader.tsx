@@ -24,7 +24,7 @@ export default function DashboardHeader({
         {viewMode === 'project' && (
           <button
             onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-brand-black/60 hover:text-brand-black hover:bg-white transition-all border border-transparent hover:border-brand-border"
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-brand-black/60 hover:text-brand-black hover:bg-brand-paper transition-all border border-transparent hover:border-brand-border"
           >
             <ChevronLeft size={18} />
             <span className="text-xs font-black uppercase tracking-widest">Back</span>
@@ -56,14 +56,14 @@ export default function DashboardHeader({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search projects..."
-            className="w-full pl-11 pr-4 py-3 bg-white border border-brand-border rounded-full text-brand-black placeholder-brand-black/30 focus:outline-none focus:ring-1 focus:ring-violet-500/30 transition-all shadow-sm"
+            className="w-full pl-11 pr-4 py-3 bg-brand-paper border border-brand-border rounded-full text-brand-black placeholder-brand-black/30 focus:outline-none focus:ring-1 focus:ring-violet-500/30 transition-all shadow-sm"
           />
         </div>
       </div>
 
       <div className="flex items-center gap-3">
         <button
-          className="p-3 rounded-full hover:bg-white text-brand-black/40 hover:text-brand-black transition-all border border-transparent hover:border-brand-border"
+          className="p-3 rounded-full hover:bg-brand-paper text-brand-black/40 hover:text-brand-black transition-all border border-transparent hover:border-brand-border"
         >
           <Settings size={18} />
         </button>
@@ -72,7 +72,7 @@ export default function DashboardHeader({
         </div>
         <button
           onClick={onClose}
-          className="p-3 rounded-full hover:bg-white text-brand-black/40 hover:text-brand-black transition-all border border-transparent hover:border-brand-border"
+          className="p-3 rounded-full hover:bg-brand-paper text-brand-black/40 hover:text-brand-black transition-all border border-transparent hover:border-brand-border"
         >
           <X size={18} />
         </button>

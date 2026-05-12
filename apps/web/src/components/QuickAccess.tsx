@@ -37,10 +37,10 @@ export default function QuickAccess({ recentProjects, onSelectProject }: QuickAc
             <button
               key={project.id}
               onClick={() => onSelectProject(project)}
-              className="w-full flex items-center justify-between p-3 rounded-full hover:bg-white transition-all group border border-transparent hover:border-brand-border"
+              className="w-full flex items-center justify-between p-3 rounded-full hover:bg-brand-paper transition-all group border border-transparent hover:border-brand-border"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-white shadow-sm flex items-center justify-center">
+                <div className="w-10 h-10 rounded-full bg-brand-paper shadow-sm flex items-center justify-center">
                   <span className="text-sm font-serif italic text-violet-600">
                     {project.name.charAt(0).toUpperCase()}
                   </span>
@@ -75,7 +75,7 @@ export default function QuickAccess({ recentProjects, onSelectProject }: QuickAc
           <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-black/50">Quick Actions</h3>
         </div>
         <div className="space-y-2">
-          <button className="w-full flex items-center gap-3 p-3 rounded-full hover:bg-white transition-all group border border-transparent hover:border-brand-border">
+          <button className="w-full flex items-center gap-3 p-3 rounded-full hover:bg-brand-paper transition-all group border border-transparent hover:border-brand-border">
             <div className="w-10 h-10 rounded-full bg-violet-500/10 flex items-center justify-center">
               <Plus size={18} className="text-violet-500" />
             </div>
@@ -84,7 +84,7 @@ export default function QuickAccess({ recentProjects, onSelectProject }: QuickAc
               <p className="text-[10px] uppercase tracking-wider font-black text-brand-black/30">Create new</p>
             </div>
           </button>
-          <button className="w-full flex items-center gap-3 p-3 rounded-full hover:bg-white transition-all group border border-transparent hover:border-brand-border">
+          <button className="w-full flex items-center gap-3 p-3 rounded-full hover:bg-brand-paper transition-all group border border-transparent hover:border-brand-border">
             <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
               <Download size={18} className="text-emerald-500" />
             </div>
@@ -93,7 +93,7 @@ export default function QuickAccess({ recentProjects, onSelectProject }: QuickAc
               <p className="text-[10px] uppercase tracking-wider font-black text-brand-black/30">From file</p>
             </div>
           </button>
-          <button className="w-full flex items-center gap-3 p-3 rounded-full hover:bg-white transition-all group border border-transparent hover:border-brand-border">
+          <button className="w-full flex items-center gap-3 p-3 rounded-full hover:bg-brand-paper transition-all group border border-transparent hover:border-brand-border">
             <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
               <Upload size={18} className="text-blue-500" />
             </div>

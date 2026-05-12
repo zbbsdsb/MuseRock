@@ -248,7 +248,7 @@ export default function MuseSphere() {
             initial={{ opacity: 0, scale: 0.8, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
-            className="pointer-events-auto absolute bottom-24 left-1/2 -translate-x-1/2 bg-white border border-brand-border rounded-2xl shadow-2xl p-4 min-w-[280px]"
+            className="pointer-events-auto absolute bottom-24 left-1/2 -translate-x-1/2 bg-brand-paper border border-brand-border rounded-2xl shadow-2xl p-4 min-w-[280px]"
           >
             <div className="flex items-center justify-between mb-4">
               <span className="text-[10px] uppercase tracking-widest font-black text-brand-black/30">Quick Actions</span>
@@ -331,7 +331,7 @@ export default function MuseSphere() {
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
-            className="pointer-events-auto absolute bottom-24 right-0 bg-white border border-brand-border rounded-xl shadow-xl p-3 min-w-[160px]"
+            className="pointer-events-auto absolute bottom-24 right-0 bg-brand-paper border border-brand-border rounded-xl shadow-xl p-3 min-w-[160px]"
           >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -426,7 +426,7 @@ export default function MuseSphere() {
             ${settings.isLocked ? 'opacity-70' : ''}
           `}
         >
-          <div className="absolute top-2 left-3 w-3 h-3 rounded-full bg-white/60 blur-sm" />
+          <div className="absolute top-2 left-3 w-3 h-3 rounded-full bg-brand-text/60 blur-sm" />
           
           <div className="absolute inset-0 flex items-center justify-center">
             <motion.div

@@ -317,7 +317,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-brand-offwhite text-brand-black font-sans overflow-hidden">
       {/* --- MINIMAL RAIL (Editorial System Nav) --- */}
-      <nav className="w-16 border-r border-brand-border flex flex-col items-center py-10 justify-between bg-white z-30 shrink-0">
+      <nav className="w-16 border-r border-brand-border flex flex-col items-center py-10 justify-between bg-brand-paper z-30 shrink-0">
         <div className="space-y-10 flex flex-col items-center">
           {/* Logo */}
           <div className="w-10 h-10 flex items-center justify-center select-none">
@@ -406,7 +406,7 @@ export default function App() {
                      initial={{ opacity: 0, y: -10 }}
                      animate={{ opacity: 1, y: 0 }}
                      exit={{ opacity: 0, y: -10 }}
-                     className="absolute top-full right-0 mt-2 bg-white border border-brand-border rounded-xl shadow-xl py-2 z-50 min-w-[180px]"
+                     className="absolute top-full right-0 mt-2 bg-brand-paper border border-brand-border rounded-xl shadow-xl py-2 z-50 min-w-[180px]"
                    >
                      <button 
                        onClick={() => handleExport('markdown')}
@@ -474,7 +474,7 @@ export default function App() {
             animate={{ x: 0 }}
             exit={{ x: 400 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="w-[400px] bg-white border-l border-brand-border flex flex-col z-20 shadow-2xl"
+            className="w-[400px] bg-brand-paper border-l border-brand-border flex flex-col z-20 shadow-2xl"
           >
             <div className="p-8 border-b border-brand-border">
               <div className="flex items-center justify-between mb-6">
@@ -561,7 +561,7 @@ export default function App() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 20, opacity: 0 }}
-              className="relative w-full max-w-xl bg-white border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
+              className="relative w-full max-w-xl bg-brand-paper border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
             >
               <div className="flex items-center justify-between mb-12">
                 <div>
@@ -586,7 +586,7 @@ export default function App() {
                       className={`py-3 rounded-xl border-2 font-black uppercase tracking-[0.15em] text-[10px] transition-all ${
                         aiMode === 'cloud'
                           ? 'border-brand-black bg-brand-black text-white'
-                          : 'border-brand-border bg-white text-brand-black/60 hover:border-brand-black/30'
+                          : 'border-brand-border bg-brand-paper text-brand-black/60 hover:border-brand-black/30'
                       }`}
                     >
                       Cloud (Server Proxy)
@@ -596,7 +596,7 @@ export default function App() {
                       className={`py-3 rounded-xl border-2 font-black uppercase tracking-[0.15em] text-[10px] transition-all ${
                         aiMode === 'local'
                           ? 'border-brand-black bg-brand-black text-white'
-                          : 'border-brand-border bg-white text-brand-black/60 hover:border-brand-black/30'
+                          : 'border-brand-border bg-brand-paper text-brand-black/60 hover:border-brand-black/30'
                       }`}
                     >
                       Local (Direct API)
@@ -690,7 +690,7 @@ export default function App() {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 20, opacity: 0 }}
-              className="relative w-full max-w-md bg-white border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
+              className="relative w-full max-w-md bg-brand-paper border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -833,7 +833,7 @@ function SuggestionCard({ label, onClick }: { label: string; onClick: () => void
   return (
     <button 
       onClick={onClick}
-      className="p-5 border border-brand-border rounded-xl bg-white hover:border-brand-black hover:shadow-lg transition-all text-left flex flex-col gap-3 group"
+      className="p-5 border border-brand-border rounded-xl bg-brand-paper hover:border-brand-black hover:shadow-lg transition-all text-left flex flex-col gap-3 group"
     >
       <div className="w-8 h-8 rounded-lg bg-brand-paper flex items-center justify-center group-hover:scale-110 transition-transform">
         <Sparkles size={14} className="text-brand-accent" />

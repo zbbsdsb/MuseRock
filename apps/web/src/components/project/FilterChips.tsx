@@ -82,7 +82,7 @@ export default function FilterChips({
 
       <button
         onClick={onClearAll}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-brand-black/50 hover:text-brand-black hover:bg-white transition-colors"
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-brand-black/50 hover:text-brand-black hover:bg-brand-paper transition-colors"
       >
         Clear All
         <X size={12} />

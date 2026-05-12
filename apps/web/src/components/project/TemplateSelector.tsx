@@ -78,7 +78,7 @@ export default function TemplateSelector({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl hover:bg-white text-brand-black/40 hover:text-brand-black transition-colors"
+            className="p-2 rounded-xl hover:bg-brand-paper text-brand-black/40 hover:text-brand-black transition-colors"
           >
             <X size={20} />
           </button>
@@ -93,7 +93,7 @@ export default function TemplateSelector({
                 px-4 py-1.5 rounded-xl text-sm font-medium transition-all
                 ${activeCategory === category.id 
                   ? 'bg-violet-500 text-white shadow-md' 
-                  : 'text-brand-black/60 hover:bg-white'}
+                  : 'text-brand-black/60 hover:bg-brand-paper'}
               `}
             >
               {category.name}
@@ -144,7 +144,7 @@ export default function TemplateSelector({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-brand-black/60 hover:text-brand-black hover:bg-white transition-colors"
+              className="px-4 py-2 rounded-xl text-sm font-medium text-brand-black/60 hover:text-brand-black hover:bg-brand-paper transition-colors"
             >
               Cancel
             </button>
@@ -208,7 +208,7 @@ function CreateTemplateModal({ onSave, onClose }: CreateTemplateModalProps) {
           <h3 className="text-lg font-serif italic text-brand-black">Create Custom Template</h3>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-white text-brand-black/40 hover:text-brand-black"
+            className="p-1.5 rounded-lg hover:bg-brand-paper text-brand-black/40 hover:text-brand-black"
           >
             <X size={18} />
           </button>
@@ -224,7 +224,7 @@ function CreateTemplateModal({ onSave, onClose }: CreateTemplateModalProps) {
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="My Awesome Template"
-              className="w-full px-4 py-2.5 rounded-xl border border-brand-border bg-white text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500"
+              className="w-full px-4 py-2.5 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500"
             />
           </div>
 
@@ -237,7 +237,7 @@ function CreateTemplateModal({ onSave, onClose }: CreateTemplateModalProps) {
               onChange={e => setDescription(e.target.value)}
               placeholder="Describe what this template is for..."
               rows={3}
-              className="w-full px-4 py-2.5 rounded-xl border border-brand-border bg-white text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 resize-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 resize-none"
             />
           </div>
 
@@ -254,7 +254,7 @@ function CreateTemplateModal({ onSave, onClose }: CreateTemplateModalProps) {
                     px-3 py-1.5 rounded-xl text-sm font-medium transition-colors
                     ${category === cat 
                       ? 'bg-violet-500 text-white' 
-                      : 'bg-brand-offwhite text-brand-black/60 hover:bg-white'}
+                      : 'bg-brand-offwhite text-brand-black/60 hover:bg-brand-paper'}
                   `}
                 >
                   {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -267,7 +267,7 @@ function CreateTemplateModal({ onSave, onClose }: CreateTemplateModalProps) {
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-brand-border">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm font-medium text-brand-black/60 hover:text-brand-black hover:bg-white transition-colors"
+            className="px-4 py-2 rounded-xl text-sm font-medium text-brand-black/60 hover:text-brand-black hover:bg-brand-paper transition-colors"
           >
             Cancel
           </button>

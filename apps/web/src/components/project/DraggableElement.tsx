@@ -115,7 +115,7 @@ export default function DraggableElement({
         className={`group relative flex items-center gap-3 p-3 rounded-xl border transition-all cursor-grab active:cursor-grabbing ${
           isDragging 
             ? 'z-50 border-violet-500 bg-violet-500/10 shadow-lg scale-105' 
-            : 'border-brand-border hover:border-brand-black/30 hover:bg-white'
+            : 'border-brand-border hover:border-brand-black/30 hover:bg-brand-paper'
         }`}
         onContextMenu={handleContextMenu}
       >
@@ -144,7 +144,7 @@ export default function DraggableElement({
               setContextMenuPosition({ x: 0, y: 0 });
               setContextMenuOpen(true);
             }}
-            className="p-1.5 rounded-lg text-brand-black/40 hover:text-brand-black hover:bg-white opacity-0 group-hover:opacity-100 transition-all"
+            className="p-1.5 rounded-lg text-brand-black/40 hover:text-brand-black hover:bg-brand-paper opacity-0 group-hover:opacity-100 transition-all"
           >
             <MoreVertical size={14} />
           </button>
@@ -189,7 +189,7 @@ export default function DraggableElement({
                         ? 'text-brand-black/20 cursor-not-allowed'
                         : item.danger
                           ? 'text-red-500 hover:bg-red-500/10'
-                          : 'text-brand-black hover:bg-white'
+                          : 'text-brand-black hover:bg-brand-paper'
                     }`}
                   >
                     <Icon size={14} />

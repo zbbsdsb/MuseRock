@@ -90,7 +90,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onCreate }: Creat
               <h2 className="text-lg font-serif italic text-brand-black">Create New Project</h2>
               <button
                 onClick={resetAndClose}
-                className="p-2 rounded-full text-brand-black/40 hover:text-brand-black hover:bg-white transition-all"
+                className="p-2 rounded-full text-brand-black/40 hover:text-brand-black hover:bg-brand-paper transition-all"
               >
                 <X size={20} />
               </button>
@@ -142,7 +142,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onCreate }: Creat
                             className={`p-5 rounded-2xl border-2 text-left transition-all ${
                               selectedTemplateId === template.id
                                 ? 'border-violet-500 bg-violet-500/5 shadow-lg'
-                                : 'border-brand-border hover:border-brand-black/30 hover:bg-white'
+                                : 'border-brand-border hover:border-brand-black/30 hover:bg-brand-paper'
                             }`}
                           >
                             <div className={`w-12 h-12 rounded-xl mb-3 flex items-center justify-center ${
@@ -179,7 +179,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onCreate }: Creat
                           value={projectName}
                           onChange={e => setProjectName(e.target.value)}
                           placeholder="My Amazing Project"
-                          className="w-full px-4 py-3 rounded-xl border border-brand-border bg-white text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 font-serif italic"
+                          className="w-full px-4 py-3 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 font-serif italic"
                           autoFocus
                         />
                       </div>
@@ -190,7 +190,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onCreate }: Creat
                           onChange={e => setProjectDescription(e.target.value)}
                           placeholder="A brief description of your project..."
                           rows={3}
-                          className="w-full px-4 py-3 rounded-xl border border-brand-border bg-white text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 resize-none"
+                          className="w-full px-4 py-3 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 resize-none"
                         />
                       </div>
                     </div>
@@ -208,7 +208,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onCreate }: Creat
                   <div>
                     <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-black/50 mb-4">Initial Setup</h3>
                     <div className="space-y-4">
-                      <label className="flex items-center justify-between p-4 rounded-xl border border-brand-border hover:bg-white transition-all cursor-pointer">
+                      <label className="flex items-center justify-between p-4 rounded-xl border border-brand-border hover:bg-brand-paper transition-all cursor-pointer">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center">
                             <Plus size={18} className="text-violet-500" />
@@ -224,9 +224,9 @@ export default function CreateProjectWizard({ isOpen, onClose, onCreate }: Creat
                             addInitialElement ? 'bg-violet-500' : 'bg-brand-border'
                           }`}
                         >
-                          <div className={`w-5 h-5 rounded-full bg-white shadow-md transition-all ${
-                            addInitialElement ? 'translate-x-6' : 'translate-x-0.5'
-                          }`} />
+                          <div className={`w-5 h-5 rounded-full bg-brand-paper shadow-md transition-all ${
+                              addInitialElement ? 'translate-x-6' : 'translate-x-0.5'
+                            }`} />
                         </button>
                       </label>
 
@@ -236,7 +236,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onCreate }: Creat
                           <div className="space-y-2">
                             {selectedTemplate.elements.map((el, index) => (
                               <div key={index} className="flex items-center gap-2 text-sm text-brand-black/70">
-                                <div className="w-6 h-6 rounded-full bg-white border border-brand-border flex items-center justify-center text-[10px] font-black">
+                                <div className="w-6 h-6 rounded-full bg-brand-paper border border-brand-border flex items-center justify-center text-[10px] font-black">
                                   {index + 1}
                                 </div>
                                 <span className="font-serif italic">{el.name}</span>
@@ -254,7 +254,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onCreate }: Creat
             <div className="flex items-center justify-between px-6 py-4 border-t border-brand-border bg-brand-paper/50">
               <button
                 onClick={step === 'template' ? resetAndClose : handleBack}
-                className="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider text-brand-black/60 hover:text-brand-black hover:bg-white transition-all border border-transparent hover:border-brand-border flex items-center gap-2"
+                className="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider text-brand-black/60 hover:text-brand-black hover:bg-brand-paper transition-all border border-transparent hover:border-brand-border flex items-center gap-2"
               >
                 {step !== 'template' && <ChevronLeft size={14} />}
                 {step === 'template' ? 'Cancel' : 'Back'}

@@ -48,7 +48,7 @@ export default function UserPanel({
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 20, opacity: 0 }}
-            className="relative w-full max-w-md bg-white border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
+            className="relative w-full max-w-md bg-brand-paper border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
           >
             <div className="flex items-center justify-between mb-8">
               <div>
