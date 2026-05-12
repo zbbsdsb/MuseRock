@@ -36,12 +36,12 @@ export class PromptHandler implements MCPHandler {
     let filtered = allPrompts;
     
     if (filters?.category) {
-      filtered = filtered.filter(p => (p as any).category === filters.category || (p as any).role === filters.category);
+      filtered = filtered.filter((p: { category?: string; role?: string }) => p.category === filters.category || p.role === filters.category);
     }
     
     if (filters?.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(p => 
+      filtered = filtered.filter((p: { name: string; description?: string }) => 
         p.name.toLowerCase().includes(searchLower) ||
         p.description?.toLowerCase().includes(searchLower)
       );

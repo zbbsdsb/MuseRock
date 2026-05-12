@@ -3,19 +3,81 @@ import { GoogleGenAI } from '@google/generative-ai';
 import { OpenAI } from 'openai';
 import { ApiProvider } from '../api-keys/entities/api-key.entity';
 
+export interface GenerationRequest {
+  prompt: string;
+  role?: string;
+  provider?: ApiProvider;
+  options?: {
+    model?: string;
+    maxTokens?: number;
+    temperature?: number;
+    topP?: number;
+    presencePenalty?: number;
+    frequencyPenalty?: number;
+    responseFormat?: 'json' | 'text';
+  };
+  templateId?: string;
+  variables?: Record<string, string>;
+}
+
+export interface PromptTemplate {
+  id: string;
+  name: string;
+  role: string;
+  template: string;
+  variables: string[];
+  description?: string;
+  schema?: Record<string, any>;
+  category?: string;
+}
+
 @Injectable()
 export class AIService {
-  async generateContent(
-    provider: ApiProvider,
-    apiKey: string,
-    prompt: string,
-    systemPrompt: string,
-    options: {
-      model?: string;
-      temperature?: number;
-      maxTokens?: number;
-    } = {},
-  ): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+  private promptTemplates: PromptTemplate[] = [
+    {
+      id: 'creative-brief',
+      name: 'Creative Brief',
+      role: 'designer',
+      template: 'Create a detailed creative brief for: {{topic}}\n\nTarget audience: {{audience}}\nKey message: {{message}}',
+      variables: ['topic', 'audience', 'message'],
+      description: 'Generate professional creative briefs',
+      category: 'writing',
+    },
+    {
+      id: 'story-outline',
+      name: 'Story Outline',
+      role: 'writer',
+      template: 'Create a story outline for: {{title}}\n\nGenre: {{genre}}\nTheme: {{theme}}',
+      variables: ['title', 'genre', 'theme'],
+      description: 'Generate story structures',
+      category: 'writing',
+    },
+    {
+      id: 'research-summary',
+      name: 'Research Summary',
+      role: 'researcher',
+      template: 'Summarize the following research: {{content}}\n\nKey findings:',
+      variables: ['content'],
+      description: 'Summarize research materials',
+      category: 'research',
+    },
+    {
+      id: 'lyrics',
+      name: 'Song Lyrics',
+      role: 'musician',
+      template: 'Write lyrics for a {{genre}} song about {{topic}}\n\nVerse 1:\nChorus:',
+      variables: ['genre', 'topic'],
+      description: 'Generate song lyrics',
+      category: 'music',
+    },
+  ];
+
+  async generateContent(request: GenerationRequest): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+    const { prompt, provider = 'openai', options = {} } = request;
+    
+    const apiKey = this.getApiKey(provider);
+    const systemPrompt = this.getSystemPrompt(request.role);
+
     switch (provider) {
       case 'gemini':
         return this.generateWithGemini(apiKey, prompt, systemPrompt, options);
@@ -28,6 +90,83 @@ export class AIService {
     }
   }
 
+  async generateStructuredContent(request: Omit<GenerationRequest, 'templateId' | 'variables'>): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+    const { prompt, provider = 'openai', options = {} } = request;
+    const apiKey = this.getApiKey(provider);
+    const systemPrompt = this.getSystemPrompt(request.role) + '\n\nRespond in JSON format.';
+
+    const mergedOptions = {
+      ...options,
+      responseFormat: 'json' as const,
+    };
+
+    switch (provider) {
+      case 'gemini':
+        return this.generateWithGemini(apiKey, prompt, systemPrompt, mergedOptions);
+      case 'openai':
+        return this.generateWithOpenAI(apiKey, prompt, systemPrompt, mergedOptions);
+      case 'anthropic':
+        return this.generateWithAnthropic(apiKey, prompt, systemPrompt, mergedOptions);
+      default:
+        throw new HttpException(`Unsupported provider: ${provider}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async generateFromTemplate(request: {
+    templateId: string;
+    variables: Record<string, string>;
+    userInput: string;
+    provider?: ApiProvider;
+    options?: GenerationRequest['options'];
+  }): Promise<{ content: string; tokensUsed: { prompt: number; completion: number; total: number } }> {
+    const template = this.promptTemplates.find(t => t.id === request.templateId);
+    if (!template) {
+      throw new HttpException(`Template not found: ${request.templateId}`, HttpStatus.NOT_FOUND);
+    }
+
+    let prompt = template.template;
+    for (const [key, value] of Object.entries(request.variables)) {
+      prompt = prompt.replace(new RegExp(`{{${key}}}`, 'g'), value);
+    }
+    prompt += `\n\nUser input: ${request.userInput}`;
+
+    const { provider = 'openai', options = {} } = request;
+    const apiKey = this.getApiKey(provider);
+    const systemPrompt = this.getSystemPrompt(template.role);
+
+    switch (provider) {
+      case 'gemini':
+        return this.generateWithGemini(apiKey, prompt, systemPrompt, options);
+      case 'openai':
+        return this.generateWithOpenAI(apiKey, prompt, systemPrompt, options);
+      case 'anthropic':
+        return this.generateWithAnthropic(apiKey, prompt, systemPrompt, options);
+      default:
+        throw new HttpException(`Unsupported provider: ${provider}`, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  getAvailableProviders(): ApiProvider[] {
+    return ['openai', 'gemini', 'anthropic'];
+  }
+
+  getPromptTemplates(): PromptTemplate[] {
+    return this.promptTemplates;
+  }
+
+  getPromptTemplateById(id: string): PromptTemplate | undefined {
+    return this.promptTemplates.find(t => t.id === id);
+  }
+
+  createPromptTemplate(template: Omit<PromptTemplate, 'id'>): PromptTemplate {
+    const newTemplate: PromptTemplate = {
+      ...template,
+      id: `template-${Date.now()}`,
+    };
+    this.promptTemplates.push(newTemplate);
+    return newTemplate;
+  }
+
   async getInspiration(
     provider: ApiProvider,
     apiKey: string,
@@ -37,8 +176,10 @@ export class AIService {
     const prompt = `Context: ${context}\n\nTask: Provide creation assistance for a creator based on this context. Focus on ${type}. Keep it brief, evocative, and high-impact. Avoid clichés.`;
     const systemPrompt = 'You are MuseRock, an elite creation assistant. You provide sharp, non-obvious insights and materials for creators across various disciplines.';
     
-    const result = await this.generateContent(provider, apiKey, prompt, systemPrompt, {
-      temperature: 0.8,
+    const result = await this.generateContent({
+      prompt,
+      provider,
+      options: { temperature: 0.8 },
     });
     
     return result.content;
@@ -52,11 +193,32 @@ export class AIService {
     const prompt = `Search Query: ${query}\n\nTask: Act as a creation assistant. Find 3-5 high-quality references, data points, or sources relevant to this query. Categorize them and explain why they are valuable for a creator.`;
     const systemPrompt = 'You are MuseRock Creation Assistant. You find deep references (scientific, historical, artistic) that others miss for creators across various disciplines.';
     
-    const result = await this.generateContent(provider, apiKey, prompt, systemPrompt, {
-      temperature: 0.3,
+    const result = await this.generateContent({
+      prompt,
+      provider,
+      options: { temperature: 0.3 },
     });
     
     return result.content;
+  }
+
+  private getApiKey(provider: ApiProvider): string {
+    const keyMap: Record<ApiProvider, string> = {
+      openai: process.env.OPENAI_API_KEY || '',
+      gemini: process.env.GEMINI_API_KEY || '',
+      anthropic: process.env.ANTHROPIC_API_KEY || '',
+    };
+    return keyMap[provider];
+  }
+
+  private getSystemPrompt(role?: string): string {
+    const rolePrompts: Record<string, string> = {
+      researcher: 'You are MuseRock Research Assistant. You provide well-researched, factual information with proper context.',
+      writer: 'You are MuseRock Writing Assistant. You craft compelling narratives and engaging content.',
+      designer: 'You are MuseRock Design Assistant. You provide creative design concepts and visual direction.',
+      musician: 'You are MuseRock Music Assistant. You help with songwriting, composition, and music theory.',
+    };
+    return rolePrompts[role || ''] || 'You are MuseRock, an elite creation assistant.';
   }
 
   private async generateWithGemini(
@@ -82,7 +244,6 @@ export class AIService {
     const response = await result.response;
     const content = response.text();
     
-    // Estimate tokens (Gemini doesn't provide exact token counts in the SDK)
     const promptTokens = Math.ceil(prompt.length / 4);
     const completionTokens = Math.ceil(content.length / 4);
     

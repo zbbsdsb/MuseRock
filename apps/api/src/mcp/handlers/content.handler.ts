@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { AIService } from '../../ai/ai.service';
+import { AIService, GenerationRequest } from '../../ai/ai.service';
 import { MCPHandler } from './handler.registry';
 import { GenerateContentParams, GenerateContentResult } from '../types/mcp.types';
 import { ProviderType } from '../../ai/adapters/adapter.factory';

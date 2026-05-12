@@ -27,9 +27,13 @@ import {
   FileDown,
   FileImage,
   Moon,
-  Sun
+  Sun,
+  Compass,
+  BookOpen
 } from 'lucide-react';
 import { useThemeStore } from './stores/themeStore';
+import { useCreativeLoopStore, STAGE_CONFIG, STAGE_ORDER } from './stores/creativeLoop.store';
+import type { LoopStage } from './stores/creativeLoop.store';
 import ReactMarkdown from 'react-markdown';
 import { MuseRockState, MuseRockMessage, ApiProvider, OasisUser } from './types';
 import { createAIService, createApiKeyService, getAIMode, setAIMode, type AIMode, type LocalAIService, type CloudAIService } from './services/ai-provider';
@@ -41,8 +45,12 @@ import MuseDashboard from './components/MuseDashboard';
 import MuseSphere from './components/MuseSphere';
 import { MuseSphereProvider } from './providers/MuseSphereProvider';
 import { exportToMarkdown, exportToWord, exportToPDF } from './utils/export';
+import PrimeBrief from './components/stages/PrimeBrief';
+import ReflectionPanel from './components/stages/ReflectionPanel';
+import DivergenceCards from './components/stages/DivergenceCards';
 
 export default function App() {
+  const { currentStage, setStage } = useCreativeLoopStore();
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [oasisUser, setOasisUser] = useState<OasisUser | null>(null);
   const [state, setState] = useState<MuseRockState>(() => {
@@ -324,27 +332,15 @@ export default function App() {
             <img src={logo} alt="MuseRock Logo" className="w-full h-full object-contain" />
           </div>
           <div className="space-y-8 flex flex-col items-center opacity-40">
-            <RailItem 
-              icon={<PenTool size={20} />} 
-              active={state.activeTab === 'write'} 
-              onClick={() => setState(prev => ({ ...prev, activeTab: 'write' }))} 
-              label="Workspace"
-            />
-            <RailItem 
-              icon={<Search size={20} />} 
-              active={state.activeTab === 'search'} 
-              onClick={() => {
-                setState(prev => ({ ...prev, activeTab: 'search' }));
-                setAiResult(null);
-              }} 
-              label="Assets"
-            />
-            <RailItem
-              icon={<Sparkles size={20} />}
-              active={false}
-              onClick={() => setIsDashboardOpen(true)}
-              label="Dashboard"
-            />
+            {Object.values(STAGE_CONFIG).map((stage) => (
+              <RailItem
+                key={stage.id}
+                icon={getStageIcon(stage.icon)}
+                active={currentStage === stage.id}
+                onClick={() => setStage(stage.id)}
+                label={stage.label}
+              />
+            ))}
           </div>
         </div>
         
@@ -382,7 +378,7 @@ export default function App() {
         <header className="mb-12 flex justify-between items-end max-w-4xl mx-auto w-full">
           <div>
             <p className="text-[10px] uppercase tracking-[0.25em] text-brand-black/30 font-black mb-3 leading-none">
-              Project: {state.title || 'Muse Draft'}
+              Stage: {STAGE_CONFIG[currentStage].label}
             </p>
             <input 
               className="text-4xl lg:text-5xl font-serif italic font-light tracking-tight bg-transparent outline-none w-full"
@@ -452,23 +448,72 @@ export default function App() {
         </header>
         
         <section className="max-w-4xl mx-auto w-full flex-1 overflow-hidden relative group">
-          <div className="absolute top-0 left-0 w-full h-full">
-            <textarea
-              value={state.content}
-              onChange={(e) => handleContentChange(e.target.value)}
-              placeholder="The sky above the port was the color of a television..."
-              className="w-full h-full bg-transparent text-xl leading-[1.8] font-serif text-brand-black/90 placeholder-brand-black/10 resize-none outline-none transparent-scrollbar pr-4 py-4"
-            />
-          </div>
-          <div className="absolute bottom-4 right-0 text-[10px] uppercase tracking-widest font-black text-brand-black/20 pointer-events-none group-hover:text-brand-black/40 transition-colors">
-            {state.content.split(/\s+/).filter(x => x).length} Words Collected
-          </div>
+          {currentStage === 'cloister' && (
+            <>
+              <div className="absolute top-0 left-0 w-full h-full">
+                <textarea
+                  value={state.content}
+                  onChange={(e) => handleContentChange(e.target.value)}
+                  placeholder="The sky above the port was the color of a television..."
+                  className="w-full h-full bg-transparent text-xl leading-[1.8] font-serif text-brand-black/90 placeholder-brand-black/10 resize-none outline-none transparent-scrollbar pr-4 py-4"
+                />
+              </div>
+              <div className="absolute bottom-4 right-0 text-[10px] uppercase tracking-widest font-black text-brand-black/20 pointer-events-none group-hover:text-brand-black/40 transition-colors">
+                {state.content.split(/\s+/).filter(x => x).length} Words Collected
+              </div>
+            </>
+          )}
+          {currentStage === 'divergence' && (
+            <>
+              <div className="absolute top-0 left-0 w-full h-full">
+                <textarea
+                  value={state.content}
+                  onChange={(e) => handleContentChange(e.target.value)}
+                  placeholder="Your writing appears here. Switch to The Cloister for full-screen writing."
+                  className="w-full h-full bg-transparent text-xl leading-[1.8] font-serif text-brand-black/90 placeholder-brand-black/10 resize-none outline-none transparent-scrollbar pr-4 py-4"
+                />
+              </div>
+              <div className="absolute bottom-4 right-0 text-[10px] uppercase tracking-widest font-black text-brand-black/20 pointer-events-none">
+                Divergence Mode - AI Generating Contrasting Ideas
+              </div>
+            </>
+          )}
+          {currentStage === 'prime' && <PrimeBrief />}
+          {currentStage === 'reflection' && <ReflectionPanel />}
         </section>
+
+        {/* Creative Loop Stage Indicator */}
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-brand-border">
+          <motion.div
+            className="h-full bg-brand-black"
+            initial={false}
+            animate={{
+              width: `${((STAGE_ORDER.indexOf(currentStage) + 1) / STAGE_ORDER.length) * 100}%`,
+            }}
+            transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+          />
+        </div>
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2">
+          {STAGE_ORDER.map((stage, i) => (
+            <button
+              key={stage}
+              onClick={() => setStage(stage)}
+              className={`w-2 h-2 rounded-full transition-all ${
+                currentStage === stage
+                  ? 'bg-brand-black scale-125'
+                  : i < STAGE_ORDER.indexOf(currentStage)
+                    ? 'bg-brand-black/40'
+                    : 'bg-brand-border'
+              }`}
+              title={STAGE_CONFIG[stage].label}
+            />
+          ))}
+        </div>
       </main>
 
       {/* --- RIGHT FUNCTION AREA: Muse panel --- */}
       <AnimatePresence>
-        {state.activeTab !== 'write' && (
+        {currentStage === 'divergence' && (
           <motion.aside 
             initial={{ x: 400 }}
             animate={{ x: 0 }}
@@ -479,7 +524,7 @@ export default function App() {
             <div className="p-8 border-b border-brand-border">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-[10px] uppercase tracking-[0.25em] font-black text-brand-black/30">Muse Engine</h2>
-                <button onClick={() => setState(prev => ({ ...prev, activeTab: 'write' }))} className="p-1 hover:bg-brand-black/5 rounded text-brand-black/40">
+                <button onClick={() => setStage('cloister')} className="p-1 hover:bg-brand-black/5 rounded text-brand-black/40">
                   <X size={16} />
                 </button>
               </div>
@@ -501,35 +546,8 @@ export default function App() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto flex flex-col p-8 transparent-scrollbar">
-              <div className="flex justify-between items-center mb-8">
-                <span className="text-[14px] font-serif italic text-brand-black/60">Creation Assistance</span>
-                <span className="text-[10px] font-black uppercase tracking-widest underline cursor-pointer hover:text-brand-accent transition-colors" onClick={() => setAiResult(null)}>Clear</span>
-              </div>
-
-              <div className="space-y-8 flex-1">
-                {isAiLoading ? (
-                  <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-30">
-                    <Loader2 size={32} className="animate-spin text-brand-black" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] italic">Synthesizing Muse</p>
-                  </div>
-                ) : aiResult ? (
-                  <div className="markdown-body text-sm leading-relaxed prose prose-stone prose-sm max-w-none animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <ReactMarkdown>{aiResult}</ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <SuggestionCard label="Plot Twist" onClick={() => getInspirationIdea('Plot Twist')} />
-                      <SuggestionCard label="Atmosphere" onClick={() => getInspirationIdea('Atmospheric Imagery')} />
-                    </div>
-                    <div className="flex flex-col items-center opacity-10 py-12">
-                      <Sparkles size={64} strokeWidth={0.5} />
-                      <p className="text-[10px] uppercase tracking-[0.4em] mt-6 font-black italic">Awaiting Spark</p>
-                    </div>
-                  </div>
-                )}
-              </div>
+            <div className="flex-1 overflow-y-auto p-6 transparent-scrollbar">
+              <DivergenceCards />
             </div>
 
             <div className="p-6 bg-brand-black text-white">
@@ -802,6 +820,16 @@ export default function App() {
       </MuseSphereProvider>
     </div>
   );
+}
+
+function getStageIcon(iconName: string) {
+  switch (iconName) {
+    case 'Compass': return <Compass size={20} />;
+    case 'PenTool': return <PenTool size={20} />;
+    case 'Sparkles': return <Sparkles size={20} />;
+    case 'BookOpen': return <BookOpen size={20} />;
+    default: return <Sparkles size={20} />;
+  }
 }
 
 function RailItem({ icon, active, onClick, label }: { icon: React.ReactNode; active?: boolean; onClick: () => void; label: string }) {
