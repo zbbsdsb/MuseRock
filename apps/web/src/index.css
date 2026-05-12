@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -36,8 +37,6 @@
 }
 
 @layer base {
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
-  
   body {
     @apply bg-brand-offwhite text-brand-black;
   }
@@ -105,20 +104,16 @@
     opacity: 0.4;
   }
   .dark .bg-brand-black\/5 {
-    background-color: var(--color-brand-text);
-    opacity: 0.05;
+    background-color: rgba(229, 229, 229, 0.05);
   }
   .dark .bg-brand-black\/10 {
-    background-color: var(--color-brand-text);
-    opacity: 0.1;
+    background-color: rgba(229, 229, 229, 0.1);
   }
   .dark .hover\:bg-brand-black\/5:hover {
-    background-color: var(--color-brand-text);
-    opacity: 0.05;
+    background-color: rgba(229, 229, 229, 0.05);
   }
   .dark .hover\:bg-brand-black\/10:hover {
-    background-color: var(--color-brand-text);
-    opacity: 0.1;
+    background-color: rgba(229, 229, 229, 0.1);
   }
   .dark .shadow-\[24px_24px_0px_0px_rgba\(26\,26\,26\,0\.1\)\] {
     box-shadow: 24px 24px 0px 0px rgba(255, 255, 255, 0.05);
@@ -136,11 +131,9 @@
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3);
   }
   .dark .ring-brand-black\/5 {
-    --tw-ring-color: var(--color-brand-text);
-    opacity: 0.05;
+    --tw-ring-color: rgba(229, 229, 229, 0.05);
   }
   .dark .ring-brand-black\/10 {
-    --tw-ring-color: var(--color-brand-text);
-    opacity: 0.1;
+    --tw-ring-color: rgba(229, 229, 229, 0.1);
   }
 }

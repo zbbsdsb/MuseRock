@@ -28,7 +28,7 @@ export async function exportToWord(options: ExportOptions): Promise<void> {
             ],
             spacing: { after: 200 },
           }),
-          ...parseContentToParagraphs(options.content),
+          ...parseContentToParagraphs(options.content, { Paragraph, TextRun }),
         ],
       },
     ],
@@ -94,8 +94,10 @@ export async function exportToPDF(options: ExportOptions): Promise<void> {
   }
 }
 
-function parseContentToParagraphs(content: string) {
-  const { Paragraph, TextRun } = require('docx');
+function parseContentToParagraphs(
+  content: string,
+  { Paragraph, TextRun }: { Paragraph: any; TextRun: any }
+) {
   const lines = content.split('\n');
   const paragraphs = [];
   
