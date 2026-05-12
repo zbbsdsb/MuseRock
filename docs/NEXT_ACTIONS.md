@@ -1,6 +1,6 @@
 # MuseRock: Next Actions & Gap Analysis
 
-> **Last Updated**: 2026-05-11 (Evening update)
+> **Last Updated**: 2026-05-12 (Morning audit — post Trae Phase 1 execution)
 > **Status**: Active — Team Action Document
 > **Purpose**: Bridge the gap between what the roadmap planned, what the codebase actually has, and what the team must do next.
 
@@ -252,6 +252,11 @@ The memory system is the heart of MuseRock. Currently it's a placebo.
 | QF-7 | `App.tsx` has dead import (`AIService` from old ai.ts) | Removed dead imports, updated types | 30 min | ✅ Done |
 | QF-8 | `ApiKeysService` uses `process.env` directly (breaks hot reload) | Switched to `ConfigService` | 30 min | ✅ Done |
 | QF-9 | `ApprenticeService` uses `while(true)` polling | Replaced with event-driven wake-up pattern | 1 hour | ✅ Done |
+| QF-10 | `auth.service.ts` setInterval 内存泄漏 | 添加 `OnModuleDestroy`, `clearInterval` | 30 min | ✅ Done |
+| QF-11 | API `dev` 脚本无热重载 (`tsc && node dist`) | 改为 `tsx watch src/main.ts` | 15 min | ✅ Done |
+| QF-12 | `apps/web/package.json` 不存在（非真 monorepo） | 新增 `apps/web/package.json` + `vite.config.ts` | 1 hour | ✅ Done |
+| QF-13 | API 无测试（`test` 脚本 exit 1） | 添加 `vitest.config.ts` + `test` 脚本 | 30 min | ✅ Done (配置) / ❌ 无测试文件 |
+| QF-14 | README 无准确 Quick Start | 更新为双端口启动说明 | 30 min | ✅ Done |
 | QF-10 | `auth.service.ts` setInterval leak | Added `OnModuleDestroy` + cleanup | 30 min | ✅ Done |
 | QF-11 | API dev script no hot reload | Changed to `tsx watch` for hot reload | 15 min | ✅ Done |
 | QF-12 | Dark theme CSS variable mismatch | Rewrote CSS using proper Tailwind v4 dark mode | 1 hour | ✅ Done |
