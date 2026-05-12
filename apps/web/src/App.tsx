@@ -162,7 +162,7 @@ export default function App() {
   const checkApiKeyStatus = async () => {
     if (!apiKeyServiceRef.current) return;
     try {
-      const keys = await apiKeyServiceRef.current.listApiKeys();
+      const keys = await apiKeyServiceRef.current.list();
       const status: {[key: string]: boolean} = {};
       keys.forEach(key => {
         status[key.provider] = key.hasKey;
@@ -275,7 +275,7 @@ export default function App() {
   const handleSaveApiKey = async (provider: ApiProvider, apiKey: string) => {
     if (!apiKeyServiceRef.current) return;
     try {
-      await apiKeyServiceRef.current.saveApiKey(provider, apiKey);
+      await apiKeyServiceRef.current.save(provider, apiKey);
       await checkApiKeyStatus();
       alert('API Key saved securely on server');
     } catch (err) {

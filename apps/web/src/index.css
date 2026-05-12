@@ -62,21 +62,6 @@
 
 /* Additional dark mode utilities using @variant */
 @layer utilities {
-  .dark .bg-white {
-    background-color: var(--color-brand-paper);
-  }
-  .dark .bg-white\/50 {
-  background-color: rgba(255, 255, 255, 0.5);
-}
-.dark .bg-white\/10 {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-.dark .hover\:bg-white\/10:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-.dark .hover\:bg-white\/50:hover {
-  background-color: rgba(255, 255, 255, 0.5);
-}
   .dark .border-white {
     border-color: var(--color-brand-paper);
   }

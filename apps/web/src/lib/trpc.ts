@@ -1,4 +1,4 @@
-import { createTRPCReact, httpBatchLink } from '@trpc/react-query';
+import { createTRPCReact, httpBatchLink, createTRPCProxyClient } from '@trpc/react-query';
 import { QueryClient } from '@tanstack/react-query';
 
 export const trpc = createTRPCReact();
@@ -6,7 +6,7 @@ export const trpc = createTRPCReact();
 export function createTRPCClient(url: string = '/api/trpc') {
   const queryClient = new QueryClient();
   
-  const client = trpc.createClient({
+  const client = createTRPCProxyClient({
     links: [
       httpBatchLink({
         url,

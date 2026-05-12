@@ -1,5 +1,13 @@
 export type ApiProvider = 'gemini' | 'openai' | 'anthropic' | 'custom';
 
+export interface OasisUser {
+  sub: string;
+  username?: string;
+  display_name?: string;
+  avatar_url?: string | null;
+  email?: string;
+}
+
 export interface MuseRockState {
   apiProvider: ApiProvider;
   apiKeys: Record<ApiProvider, string>;
