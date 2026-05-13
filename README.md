@@ -144,12 +144,18 @@ muserock/
 │   │   │   ├── memory/       # 5-layer memory system
 │   │   │   ├── mcp/          # Model Context Protocol gateway
 │   │   │   ├── oasis/        # OasisBio integration
+│   │   │   ├── observability/# Metrics and monitoring
+│   │   │   ├── health/       # Health check endpoints
 │   │   │   └── ...
 │   │   └── package.json
 │   └── web/                    # React Frontend
 │       ├── src/
 │       │   ├── App.tsx       # Main application component
 │       │   ├── components/   # Reusable UI components
+│       │   │   ├── stages/   # Creative Loop stage components
+│       │   │   ├── editor/   # The Cloister writing editor
+│       │   │   ├── layout/   # Navigation and layout
+│       │   │   └── ...
 │       │   ├── services/     # Business logic services
 │       │   ├── stores/       # State management (Zustand)
 │       │   ├── hooks/        # Custom React hooks
@@ -159,7 +165,6 @@ muserock/
 │   └── workflows/
 │       └── ci.yml            # GitHub Actions CI/CD
 ├── docs/                      # Architecture documentation
-├── planning/                   # Implementation roadmaps
 └── package.json               # Root workspace configuration
 ```
 
@@ -250,9 +255,10 @@ MuseRock stands on the shoulders of giants:
 
 | Document | Description |
 |----------|-------------|
-| [Implementation Roadmap](planning/IMPLEMENTATION_ROADMAP.md) | Product development phases and milestones |
-| [Detailed Task Breakdown](planning/DETAILED_TASK_BREAKDOWN.md) | Granular task definitions |
-| [Architecture Doc](docs/architecture.md) | System architecture (planned) |
+| [API Documentation](docs/API_Documentation.md) | Complete API reference and endpoints |
+| [Technical Architecture](docs/Technical_Architecture.md) | System architecture overview |
+| [Creative Loop Guide](docs/Creative_Loop_Guide.md) | Guide to the 4-stage creative process |
+| [Muse Engine Guide](docs/Muse_Engine_Guide.md) | AI-powered inspiration generation |
 
 ---
 

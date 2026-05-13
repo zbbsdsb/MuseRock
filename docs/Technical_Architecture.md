@@ -2,106 +2,116 @@
 
 ## System Overview
 
-MuseRock is a modular, distributed system designed to provide creative assistance through AI-powered agents and advanced memory management. The system follows a microservices architecture with clear separation of concerns between frontend, backend, and external services.
+MuseRock is a modular, distributed system designed to provide creative assistance through AI-powered agents and advanced memory management. The system follows a monorepo architecture with clear separation of concerns between frontend, backend, and external services.
+
+**Current Stage**: MVP (Minimum Viable Product)
 
 ## Architecture Diagram
 
 ```mermaid
 flowchart TD
-    subgraph Frontend
-        WebApp[Web Application\nReact + TypeScript]
-        AuthUI[Authentication UI]
-        MemoryUI[Memory Management UI]
-        ApprenticeUI[Apprentice Management UI]
-        OasisUI[OasisBio Integration UI]
+    subgraph Frontend [Frontend - React + TypeScript]
+        App[App Component]
+        Landing[Landing Page]
+        RailNav[Rail Navigation]
+        Cloister[The Cloister - Editor]
+        PrimeBrief[Prime Brief Component]
+        Divergence[Divergence Cards]
+        Reflection[Reflection Panel]
+        Export[Export Functions]
+        Theme[Theme System]
+        Auth[Auth UI]
     end
 
-    subgraph Backend
-        BFF[NestJS BFF\nBackend for Frontend]
-        AuthService[Authentication Service]
-        MemoryService[Memory Service]
+    subgraph StateManagement [State Management - Zustand]
+        AppStore[App Store]
+        AIStore[AI Store]
+        AuthStore[Auth Store]
+        CreativeLoopStore[Creative Loop Store]
+        ThemeStore[Theme Store]
+    end
+
+    subgraph Backend [Backend - NestJS]
+        BFF[BFF API Layer]
+        AIProxy[AI Proxy Controller]
+        ApiKeys[API Keys Controller]
+        Health[Health Controller]
         AIService[AI Service]
-        PromptRegistry[Prompt Registry]
-        ModelAdapter[Model Adapter Factory]
-        ApprenticeService[Apprentice Service]
-        MCPService[MCP Gateway]
-        MCPSocket[MCP WebSocket Gateway]
-        OasisService[OasisBio Adapter]
-        OasisOAuthService[Oasis OAuth Service]
-        ComplianceService[Compliance Service]
-        ObservabilityService[Observability Service]
+        ModelAdapters[Model Adapter Factory]
+        ApiKeysService[API Keys Service]
+        HealthService[Health Service]
+        Encryption[Encryption (AES-256-GCM)]
+        MemoryLayers[5-Layer Memory (In-Memory)]
+        Observability[Observability Service]
+        Compliance[Compliance Service (Mock)]
+        Apprentice[Apprentice Service]
+        MCP[MCP Gateway (Scaffold)]
+        Oasis[OasisBio (Scaffold)]
     end
 
-    subgraph External Services
-        OpenAI[OpenAI API]
-        Gemini[Google Gemini API]
-        OasisBio[OasisBio API]
+    subgraph External [External Services]
+        Gemini[Google Gemini]
+        OpenAI[OpenAI]
+        Anthropic[Anthropic]
         Firebase[Firebase Auth]
     end
 
-    subgraph Data Storage
-        PostgreSQL[PostgreSQL Database]
-        Redis[Redis Cache]
-        PgVector[pgvector\nVector Search]
+    subgraph Storage [Data Storage]
+        SQLite[SQLite (Dev)]
+        LocalStorage[LocalStorage (Frontend)]
     end
 
-    subgraph Observability
-        Prometheus[Prometheus Monitoring]
-        AlertManager[AlertManager]
-    end
+    %% Frontend connections
+    App --> Landing
+    App --> RailNav
+    App --> Cloister
+    App --> PrimeBrief
+    App --> Divergence
+    App --> Reflection
+    App --> Export
+    App --> Theme
+    App --> Auth
 
-    WebApp --> AuthUI
-    WebApp --> MemoryUI
-    WebApp --> ApprenticeUI
-    WebApp --> OasisUI
+    App --> StateManagement
+    StateManagement --> AppStore
+    StateManagement --> AIStore
+    StateManagement --> AuthStore
+    StateManagement --> CreativeLoopStore
+    StateManagement --> ThemeStore
 
-    AuthUI --> BFF
-    MemoryUI --> BFF
-    ApprenticeUI --> BFF
-    OasisUI --> BFF
+    %% Frontend to Backend
+    App --> BFF
 
-    BFF --> AuthService
-    BFF --> MemoryService
-    BFF --> ApprenticeService
-    BFF --> MCPService
-    BFF --> OasisService
+    %% Backend connections
+    BFF --> AIProxy
+    BFF --> ApiKeys
+    BFF --> Health
+    BFF --> Observability
 
-    AuthService --> Firebase
-    AuthService --> OasisOAuthService
+    AIProxy --> AIService
+    ApiKeys --> ApiKeysService
+    Health --> HealthService
 
-    MemoryService --> PostgreSQL
-    MemoryService --> PgVector
-    MemoryService --> Redis
+    AIService --> ModelAdapters
+    ModelAdapters --> Gemini
+    ModelAdapters --> OpenAI
+    ModelAdapters --> Anthropic
 
-    AIService --> PromptRegistry
-    AIService --> ModelAdapter
-    ModelAdapter --> OpenAI
-    ModelAdapter --> Gemini
+    ApiKeysService --> Encryption
+    ApiKeysService --> SQLite
 
-    ApprenticeService --> AIService
-    ApprenticeService --> PostgreSQL
+    %% Optional components
+    Compliance --> MemoryLayers
+    Apprentice --> AIService
 
-    MCPService --> MemoryService
-    MCPService --> ApprenticeService
-    MCPService --> OasisService
-    MCPSocket --> MCPService
+    %% Storage
+    AIStore --> LocalStorage
+    AppStore --> LocalStorage
+    CreativeLoopStore --> LocalStorage
+    AuthStore --> LocalStorage
+    ThemeStore --> LocalStorage
 
-    OasisService --> OasisOAuthService
-    OasisOAuthService --> OasisBio
-
-    ComplianceService --> MemoryService
-    ComplianceService --> ApprenticeService
-    ComplianceService --> AIService
-
-    ObservabilityService --> BFF
-    ObservabilityService --> AuthService
-    ObservabilityService --> MemoryService
-    ObservabilityService --> ApprenticeService
-    ObservabilityService --> MCPService
-    ObservabilityService --> AIService
-
-    Prometheus --> ObservabilityService
-    AlertManager --> Prometheus
+    Auth --> Firebase
 ```
 
 ## Component Details
@@ -112,279 +122,348 @@ flowchart TD
 - **Framework**: React 19 with TypeScript
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
-- **State Management**: Local Storage for client-side state
-- **Key Components**:
-  - Authentication UI: Handles user login and OAuth flow
-  - Memory Management UI: Visualizes and manages memory items
-  - Apprentice Management UI: Creates and manages AI agents
+- **State Management**: Zustand with persistence to localStorage
+- **Markdown Rendering**: react-markdown
 
-#### Authentication Flow
-1. User clicks "Continue with Oasis" button
-2. Frontend redirects to backend OAuth endpoint
-3. Backend initiates OAuth flow with OasisBio
-4. User authenticates with OasisBio
-5. OasisBio redirects back to backend callback
-6. Backend exchanges code for tokens and stores them in httpOnly cookies
-7. Backend redirects back to frontend
-8. Frontend checks authentication status via userinfo endpoint
+**Key Components**:
+
+- **App.tsx**: Main application orchestrator with Creative Loop stage routing
+- **Landing.tsx**: Marketing and onboarding page
+- **RailNav.tsx**: Navigation rail with Creative Loop stage indicators
+- **Editor.tsx**: The Cloister - distraction-free writing environment
+- **PrimeBrief.tsx**: Stage 1 - Intent setting and project definition
+- **DivergenceCards.tsx**: Stage 3 - AI-powered idea generation
+- **ReflectionPanel.tsx**: Stage 4 - Session reflection and logging
+- **SettingsModal.tsx**: Configuration panel for AI providers and themes
+
+#### Landing Page
+- Marketing copy and onboarding
+- Feature highlights
+- Quick start CTA
+- Theme toggle
+
+#### Creative Loop State Machine
+- **Stages**: Prime → Cloister → Divergence → Reflection
+- **Persistence**: Zustand middleware persists to localStorage
+- **History**: Tracks stage entry/exit times and duration
+
+#### Export Functions
+- Markdown export
+- Word (.docx) export via dynamic import
+- PDF export via html2canvas + jsPDF
+
+#### Theme System
+- **Light Mode**: Default, clean interface
+- **Dark Mode**: Eye-friendly dark theme
+- **Semantic Tokens**: `bg-brand-paper`, `text-brand-black` instead of hardcoded colors
+
+---
+
+### State Management
+
+#### App Store
+- Active project management
+- UI state
+- Navigation
+
+#### AI Store
+- AI provider configuration
+- API keys (Local Mode only)
+- Generation history
+- Idea cards
+
+#### Auth Store
+- User authentication state
+- Firebase integration
+
+#### Creative Loop Store
+- Current stage
+- Stage history and timing
+- Prime brief data
+- Idea cards
+- Reflection entries
+
+#### Theme Store
+- Active theme
+- Theme preferences
+
+---
 
 ### Backend Layer
 
 #### NestJS BFF (Backend for Frontend)
 - **Framework**: NestJS with TypeScript
-- **Responsibilities**:
-  - Routing and request handling
-  - Authentication and session management
-  - API aggregation and transformation
-  - Error handling and logging
+- **Architecture**: Modular feature-based modules
+- **API Style**: REST + tRPC (planned)
+- **WebSocket**: Socket.io for MCP (coming soon)
 
-#### Authentication Service
-- **Responsibilities**:
-  - OAuth 2.0 + PKCE flow implementation
-  - Token management and refresh
-  - User session management
-  - Integration with Firebase Auth
+#### AI Proxy Controller
+- Routes AI requests through backend
+- Retrieves encrypted API keys
+- Validates requests
+- Error handling
 
-#### Memory Service
-- **Responsibilities**:
-  - 5-layer memory management
-  - Memory storage and retrieval
-  - Search and query processing
-  - ACL and sensitivity filtering
-  - Vector search integration
+#### API Keys Controller
+- `POST /api-keys`: Save encrypted API key
+- `GET /api-keys`: List configured keys
+- `DELETE /api-keys/:provider`: Delete key
+- Encryption: AES-256-GCM
+
+#### Health Controller
+- `GET /health`: Liveness probe
+- `GET /health/ready`: Readiness probe
 
 #### AI Service
-- **Responsibilities**:
-  - AI model integration and orchestration
-  - Structured output generation with JSON schemas
-  - Prompt template management and rendering
-  - Multi-provider support via adapter pattern
-  - Token usage tracking and reporting
+- Multi-provider AI generation
+- Prompt registry
+- Token usage tracking
+- Error recovery
 
-#### Prompt Registry Service
-- **Responsibilities**:
-  - CRUD operations for prompt templates
-  - Template versioning
-  - Variable validation and substitution
-  - JSON schema definitions for structured outputs
-  - Default templates for all roles (researcher, writer, designer, musician)
+#### Model Adapter Factory
+- **Gemini Adapter**: Google Gemini API integration
+- **OpenAI Adapter**: OpenAI API integration
+- **Anthropic Adapter**: Claude API integration via fetch
+- **Base Adapter**: Common interface for all providers
 
-#### Model Adapter Layer
-- **Responsibilities**:
-  - Unified interface for all AI providers
-  - OpenAI API integration
-  - Google Gemini API integration
-  - Structured output support
-  - Token usage tracking
-  - Provider-specific configuration
+#### Memory Service (MVP)
+- **5-Layer Architecture**: Working, Episodic, Contextual, Knowledge, Compliance
+- **Current Storage**: In-memory Map (data lost on restart)
+- **Future**: PostgreSQL + pgvector for persistence
 
 #### Apprentice Service
-- **Responsibilities**:
-  - Agent lifecycle management
-  - Job queue and processing
-  - AI model integration
-  - Task execution and result management
-  - Budget and timeout control
+- Job queue system
+- Event-driven processing
+- Agent lifecycle management
 
-#### MCP Gateway
-- **Responsibilities**:
-  - JSON-RPC protocol implementation
-  - Method routing and execution
-  - Request validation and rate limiting
-  - Batch request processing
-  - Error handling and reporting
-  - WebSocket support for real-time communication
-  - Plugin management and validation
-  - Audit logging and compliance tracking
-
-#### MCP WebSocket Gateway
-- **Responsibilities**:
-  - Real-time bidirectional communication
-  - WebSocket connection management
-  - RPC request handling over WebSocket
-  - Batch request processing
-  - Connection monitoring and metrics
-
-#### MCP Handlers
-- **Available Handlers**:
-  - `search_memory`: Search across memory layers
-  - `create_apprentice_job`: Create apprentice agent jobs
-  - `fetch_bio_asset`: Retrieve biological assets from OasisBio
-  - `generate_content`: Generate AI content
-  - `manage_prompts`: CRUD operations for prompt templates
-
-#### MCP Middleware
-- **Authentication Middleware**: Token validation and user extraction
-- **Rate Limiting Middleware**: Request rate control per user/endpoint
-- **Validation Middleware**: Request schema validation
-
-#### MCP Plugin System
-- **Plugin Manager**: Install, enable, disable, and uninstall plugins
-- **Plugin Validator**: Validate plugin manifests and permissions
-- **Audit Service**: Track and log all MCP operations
-
-#### OasisBio Adapter
-- **Responsibilities**:
-  - OasisBio API integration
-  - User profile synchronization
-  - Bio asset access and management
-  - Personalized recommendation handling
-
-#### Compliance Service
-- **Responsibilities**:
-  - Data privacy and security checks
-  - OWASP Top 10 vulnerability scanning
-  - Data sanitization and masking
-  - Compliance reporting
+#### Compliance Service (Mock)
+- Security checks
+- OWASP Top 10 (mock implementation)
 
 #### Observability Service
-- **Responsibilities**:
-  - Log collection and analysis
-  - Performance metrics collection
-  - Distributed tracing
-  - Health checks and monitoring
-  - Alerting and incident response
+- Metrics collection
+- Logging
+- Prometheus endpoint
 
-### Data Storage Layer
+#### MCP Gateway (Scaffold)
+- JSON-RPC protocol
+- Method handlers (skeleton)
+- WebSocket support (planned)
 
-#### PostgreSQL Database
-- **Usage**:
-  - Persistent storage for memory items
-  - Apprentice and job data
-  - User information
-  - System configuration
-
-#### Redis Cache
-- **Usage**:
-  - In-memory caching for frequently accessed data
-  - Session storage
-  - Rate limiting counters
-  - Temporary state storage
-
-#### pgvector
-- **Usage**:
-  - Vector embeddings for memory items
-  - Semantic search capabilities
-  - Similarity matching
-
-### External Services
-
-#### AI Model APIs
-- **OpenAI API**: GPT models for text generation and analysis
-- **Google Gemini API**: Multimodal AI capabilities
-- **Anthropic API**: Claude models for conversational AI
-
-#### Authentication Services
-- **Firebase Auth**: Additional authentication provider
-- **OasisBio API**: OAuth provider and bio asset access
-
-## Data Flow
-
-### Memory Operations
-1. Frontend sends memory operation request to BFF
-2. BFF validates request and routes to Memory Service
-3. Memory Service processes request and stores/retrieves data
-4. Memory Service applies ACL and sensitivity filtering
-5. For search operations, Memory Service uses pgvector for semantic search
-6. Results are returned through BFF to frontend
-
-### Apprentice Job Execution
-1. Frontend creates job request via BFF
-2. BFF routes request to Apprentice Service
-3. Apprentice Service adds job to queue
-4. Job processor picks up job and executes it
-5. Apprentice Service calls appropriate AI model API
-6. Results are stored and returned to frontend
-
-### MCP Requests
-1. Client sends JSON-RPC request to MCP Gateway
-2. MCP Gateway validates request and routes to appropriate service
-3. Service executes requested method
-4. Results are formatted as JSON-RPC response and returned to client
-
-## Security Architecture
-
-### Authentication and Authorization
-- **OAuth 2.0 + PKCE**: Secure third-party authentication
-- **httpOnly Cookies**: Token storage to prevent XSS attacks
-- **Access Control**: Role-based access control for resources
-- **Session Management**: Secure session handling and expiration
-
-### Data Security
-- **Encryption**: Transport-level encryption (HTTPS)
-- **Data Sanitization**: Input validation and sanitization
-- **Sensitivity Filtering**: Access control based on data sensitivity
-- **Compliance Checks**: Regular security audits and vulnerability scans
-
-### API Security
-- **Rate Limiting**: Prevention of API abuse
-- **Request Validation**: Input validation and schema checks
-- **Error Handling**: Secure error reporting without sensitive information
-- **CORS Configuration**: Restrict cross-origin requests
-
-## Scalability Considerations
-
-### Horizontal Scaling
-- **Stateless Design**: Services are designed to be stateless for easy scaling
-- **Load Balancing**: Distribution of requests across multiple instances
-- **Auto-scaling**: Dynamic resource allocation based on load
-
-### Performance Optimization
-- **Caching**: Redis for frequently accessed data
-- **Database Optimization**: Indexing and query optimization
-- **Parallel Processing**: Concurrent execution of independent tasks
-- **Batch Processing**: Efficient handling of multiple requests
-
-### Resilience
-- **Circuit Breakers**: Protection against cascading failures
-- **Retry Mechanisms**: Automatic retry for transient failures
-- **Graceful Degradation**: System continues to function with reduced capabilities
-- **Disaster Recovery**: Backup and restoration procedures
-
-## Deployment Architecture
-
-### Containerization
-- **Docker**: Containerization of services
-- **Kubernetes**: Orchestration and management of containers
-
-### CI/CD Pipeline
-- **GitHub Actions**: Automated build, test, and deployment
-- **Artifact Repository**: Storage of build artifacts
-- **Deployment Strategy**: Blue-green or rolling deployments
-
-### Environment Management
-- **Development**: Local development environment
-- **Staging**: Pre-production testing environment
-- **Production**: Live production environment
-
-## Monitoring and Observability
-
-### Logging
-- **Structured Logs**: JSON-formatted logs for easy analysis
-- **Log Aggregation**: Centralized log collection and storage
-- **Log Analysis**: Tools for log search and analysis
-
-### Metrics
-- **Performance Metrics**: Response times, throughput, error rates
-- **Resource Metrics**: CPU, memory, disk usage
-- **Business Metrics**: User activity, feature usage
-
-### Tracing
-- **Distributed Tracing**: End-to-end request tracking
-- **Service Dependencies**: Visualization of service interactions
-- **Performance Bottlenecks**: Identification of slow operations
-
-### Alerting
-- **Threshold-based Alerts**: Notifications for performance issues
-- **Anomaly Detection**: Automatic detection of unusual patterns
-- **Incident Response**: Automated response to critical issues
-
-## Conclusion
-
-The MuseRock technical architecture is designed to be scalable, secure, and reliable, with clear separation of concerns and modular components. By leveraging modern technologies and best practices, the system provides a robust foundation for delivering intelligent creative assistance to users.
+#### OasisBio Adapter (Scaffold)
+- OAuth PKCE flow
+- Session management
+- Placeholder for future integration
 
 ---
 
-*Document updated on: 2026-05-08*
-*Version: 1.1*
+### Data Storage
+
+#### SQLite (Development)
+- API keys table
+- OAuth sessions
+- Future: Memory persistence
+
+#### localStorage (Frontend)
+- User preferences
+- Writing content
+- Idea cards
+- Creative loop state
+- Theme settings
+- API keys (Local Mode only)
+
+---
+
+### External Services
+
+#### AI Providers
+- **Gemini**: @google/genai SDK
+- **OpenAI**: openai SDK
+- **Anthropic**: Direct fetch API
+
+#### Authentication
+- **Firebase Auth**: Google sign-in
+- **Future**: OasisBio OAuth
+
+---
+
+## Data Flow
+
+### AI Generation Flow (Cloud Mode)
+
+```
+1. User writes prompt in frontend
+2. Frontend sends to POST /ai/generate
+3. BFF retrieves encrypted API key from DB
+4. BFF decrypts API key
+5. BFF calls appropriate AI provider
+6. AI provider returns response
+7. BFF returns response to frontend
+8. Frontend displays result
+```
+
+### AI Generation Flow (Local Mode)
+
+```
+1. User writes prompt in frontend
+2. Frontend retrieves API key from localStorage
+3. Frontend calls AI provider directly
+4. AI provider returns response
+5. Frontend displays result
+```
+
+### Creative Loop Flow
+
+```
+1. User enters Prime stage
+2. Sets intent, constraints, references
+3. Moves to Cloister - writes
+4. Moves to Divergence - generates ideas
+5. Keeps/discards cards
+6. Moves to Reflection - logs session
+7. Optionally repeats the loop
+```
+
+---
+
+## Security Architecture
+
+### Authentication & Authorization
+- **OAuth PKCE**: Secure third-party auth (planned)
+- **Local Mode**: No auth needed, fully client-side
+- **Cloud Mode**: JWT-based auth (planned)
+
+### Data Security
+- **Encryption**: AES-256-GCM for stored API keys
+- **httpOnly Cookies**: For tokens (future)
+- **Data Sanitization**: Input validation
+- **No Secrets in Frontend**: API keys never hardcoded in bundle
+
+### API Security
+- **Rate Limiting**: Planned
+- **Request Validation**: Zod schemas (planned)
+- **Error Handling**: No sensitive info in error messages
+- **CORS**: Configured for development
+
+---
+
+## Development Architecture
+
+### Monorepo Structure
+```
+muserock/
+├── apps/
+│   ├── api/                    # NestJS Backend
+│   │   ├── src/
+│   │   │   ├── ai/            # AI adapters & service
+│   │   │   ├── api-keys/      # Key management
+│   │   │   ├── apprentice/    # Agent system
+│   │   │   ├── auth/          # Authentication
+│   │   │   ├── memory/        # 5-layer memory
+│   │   │   ├── mcp/           # Model Context Protocol
+│   │   │   ├── oasis/         # OasisBio integration
+│   │   │   ├── health/        # Health checks
+│   │   │   └── observability/ # Metrics
+│   │   └── package.json
+│   └── web/                    # React Frontend
+│       ├── src/
+│       │   ├── components/    # UI components
+│       │   ├── services/      # Business logic
+│       │   ├── stores/        # Zustand stores
+│       │   ├── utils/         # Helpers
+│       │   └── App.tsx
+│       └── package.json
+├── docs/                       # Documentation
+└── package.json
+```
+
+### Build & Dev Tools
+- **Root package.json**: Shared scripts for build, dev, typecheck
+- **Vite**: Frontend build
+- **TypeScript**: Strict type checking
+- **Vitest**: Testing framework
+- **ESLint**: Linting (planned)
+
+---
+
+## Testing Architecture
+
+### Backend Testing
+- **Framework**: Vitest
+- **Test Files**: *.test.ts alongside source
+- **Coverage**: Health, API Keys, Auth services
+- **Mocks**: TypeORM repositories, ConfigService
+
+### Frontend Testing
+- **Framework**: Vitest
+- **Test Files**: *.test.ts alongside stores
+- **Coverage**: Store logic tests
+- **Mocks**: localStorage, external services
+
+### CI/CD
+- **GitHub Actions**: Automated builds & tests
+- **Status Checks**: Typecheck, build, test required before merge
+
+---
+
+## Future Architecture (Post-MVP)
+
+### Planned Additions
+
+#### Persistence Layer
+- PostgreSQL database
+- pgvector for embeddings
+- Redis for caching
+- Migration system
+
+#### MCP Gateway
+- Full JSON-RPC implementation
+- WebSocket real-time
+- Plugin system
+- Audit logging
+
+#### Apprentice System
+- BullMQ job queue
+- Agent execution engine
+- Budget & timeout controls
+
+#### Memory Engine
+- Vector similarity search
+- ACL & sensitivity filtering
+- Persistence across restarts
+
+#### Observability
+- Prometheus metrics
+- Grafana dashboards
+- OpenTelemetry tracing
+
+---
+
+## Current Status
+
+### ✅ Complete for MVP
+- Frontend Creative Loop
+- Multi-provider AI integration
+- Cloud/Local mode switching
+- API key encryption
+- Health check endpoints
+- Dark theme support
+- Export functions (Markdown, Word, PDF)
+- Basic test suite
+
+### 🔄 In Progress
+- CI/CD pipeline refinement
+- Additional test coverage
+
+### 📋 Planned (Post-MVP)
+- PostgreSQL + pgvector
+- Redis integration
+- MCP Gateway implementation
+- Apprentice job queue
+- Full observability stack
+- Compliance & security hardening
+
+---
+
+*Document updated on: 2026-05-13*
+*Version: 2.0 (MVP)*
 *Author: MuseRock Team*
