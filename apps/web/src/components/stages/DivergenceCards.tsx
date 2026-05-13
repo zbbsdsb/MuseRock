@@ -3,14 +3,14 @@ import { Plus, X, Sparkles } from 'lucide-react';
 import { useCreativeLoopStore } from '../../stores/creativeLoop.store';
 
 export default function DivergenceCards() {
-  const { ideaCards, addIdeaCard, removeIdeaCard, toggleCardAcceptance } = useCreativeLoopStore();
+  const { ideaCards, addIdeaCard, removeIdeaCard, updateIdeaCard } = useCreativeLoopStore();
 
   const handleAddCard = () => {
-    const categories = ['character', 'conflict', 'setting', 'theme', 'dialogue', 'plot'];
+    const categories = ['character', 'conflict', 'symbolic', 'structural', 'worldview'] as const;
     const randomCategory = categories[Math.floor(Math.random() * categories.length)];
     addIdeaCard({
       content: 'New idea...',
-      category: randomCategory as any,
+      category: randomCategory,
       rationale: '',
     });
   };
@@ -19,10 +19,9 @@ export default function DivergenceCards() {
     const colors: Record<string, string> = {
       character: 'border-amber-400 bg-amber-50',
       conflict: 'border-red-400 bg-red-50',
-      setting: 'border-blue-400 bg-blue-50',
-      theme: 'border-purple-400 bg-purple-50',
-      dialogue: 'border-green-400 bg-green-50',
-      plot: 'border-pink-400 bg-pink-50',
+      symbolic: 'border-purple-400 bg-purple-50',
+      structural: 'border-blue-400 bg-blue-50',
+      worldview: 'border-green-400 bg-green-50',
     };
     return colors[category] || 'border-gray-400 bg-gray-50';
   };
@@ -31,10 +30,9 @@ export default function DivergenceCards() {
     const labels: Record<string, string> = {
       character: 'Character',
       conflict: 'Conflict',
-      setting: 'Setting',
-      theme: 'Theme',
-      dialogue: 'Dialogue',
-      plot: 'Plot',
+      symbolic: 'Symbolic',
+      structural: 'Structural',
+      worldview: 'Worldview',
     };
     return labels[category] || category;
   };
@@ -63,7 +61,7 @@ export default function DivergenceCards() {
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ type: 'spring', damping: 20, stiffness: 200 }}
               className={`relative p-4 rounded-xl border-2 ${getCategoryColor(card.category)} ${
-                card.accepted ? 'ring-2 ring-brand-black/20' : ''
+                card.isKept ? 'ring-2 ring-brand-black/20' : ''
               }`}
             >
               <div className="flex items-start justify-between mb-2">
@@ -77,40 +75,31 @@ export default function DivergenceCards() {
                   <X size={14} className="text-brand-black/40" />
                 </button>
               </div>
-              
+
               <textarea
                 value={card.content}
-                onChange={(e) => {
-                  // Find the card and update its content
-                  const store = useCreativeLoopStore.getState();
-                  const cardIndex = store.ideaCards.findIndex((c) => c.id === card.id);
-                  if (cardIndex !== -1) {
-                    const updatedCards = [...store.ideaCards];
-                    updatedCards[cardIndex] = { ...card, content: e.target.value };
-                    useCreativeLoopStore.getState().updateIdeaCards(updatedCards);
-                  }
-                }}
+                onChange={(e) => updateIdeaCard(card.id, { content: e.target.value })}
                 placeholder="Write your idea here..."
                 className="w-full bg-transparent text-sm font-serif text-brand-black/80 placeholder-brand-black/20 resize-none outline-none"
                 rows={3}
               />
-              
+
               {card.rationale && (
                 <div className="mt-3 pt-3 border-t border-brand-black/10">
                   <p className="text-xs text-brand-black/50 italic">{card.rationale}</p>
                 </div>
               )}
-              
+
               <div className="mt-3 flex items-center justify-between">
                 <button
-                  onClick={() => toggleCardAcceptance(card.id)}
+                  onClick={() => updateIdeaCard(card.id, { isKept: !card.isKept })}
                   className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${
-                    card.accepted
+                    card.isKept
                       ? 'bg-brand-black text-white'
                       : 'border border-brand-border hover:border-brand-black hover:bg-brand-paper'
                   }`}
                 >
-                  {card.accepted ? 'Accepted' : 'Accept'}
+                  {card.isKept ? 'Kept' : 'Keep'}
                 </button>
                 <Sparkles size={14} className="text-brand-black/20" />
               </div>
@@ -136,13 +125,13 @@ export default function DivergenceCards() {
 
       <div className="mt-4 pt-4 border-t border-brand-border flex items-center justify-between">
         <span className="text-[10px] text-brand-black/30">
-          {ideaCards.length} cards ({ideaCards.filter((c) => c.accepted).length} accepted)
+          {ideaCards.length} cards ({ideaCards.filter((c) => c.isKept).length} kept)
         </span>
         <button
           onClick={() => {
-            const acceptedCards = ideaCards.filter((c) => c.accepted);
-            if (acceptedCards.length > 0) {
-              alert(`Accepted ${acceptedCards.length} cards!`);
+            const keptCards = ideaCards.filter((c) => c.isKept);
+            if (keptCards.length > 0) {
+              alert(`Kept ${keptCards.length} cards!`);
             }
           }}
           className="px-4 py-2 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all"
