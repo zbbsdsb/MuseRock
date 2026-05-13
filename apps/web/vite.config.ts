@@ -5,6 +5,8 @@ import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
+  const isGitHubPages = env.VITE_GITHUB_PAGES === 'true';
+  
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
@@ -12,6 +14,7 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, 'src'),
       },
     },
+    base: isGitHubPages ? '/MuseRock/' : '/',
     server: {
       port: 3000,
       host: '0.0.0.0',

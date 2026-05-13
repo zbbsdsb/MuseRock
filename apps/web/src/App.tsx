@@ -48,9 +48,14 @@ import { exportToMarkdown, exportToWord, exportToPDF } from './utils/export';
 import PrimeBrief from './components/stages/PrimeBrief';
 import ReflectionPanel from './components/stages/ReflectionPanel';
 import DivergenceCards from './components/stages/DivergenceCards';
+import Landing from './components/Landing';
 
 export default function App() {
   const { currentStage, setStage } = useCreativeLoopStore();
+  const [showLanding, setShowLanding] = useState(() => {
+    // Check if user has visited before
+    return localStorage.getItem('muserock_visited') !== 'true';
+  });
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [oasisUser, setOasisUser] = useState<OasisUser | null>(null);
   const [state, setState] = useState<MuseRockState>(() => {
@@ -322,6 +327,15 @@ export default function App() {
     }
   };
 
+  const handleStart = () => {
+    localStorage.setItem('muserock_visited', 'true');
+    setShowLanding(false);
+  };
+
+  if (showLanding) {
+    return <Landing onStart={handleStart} />;
+  }
+
   return (
     <div className="flex h-screen bg-brand-offwhite text-brand-black font-sans overflow-hidden">
       {/* --- MINIMAL RAIL (Editorial System Nav) --- */}
@@ -521,33 +535,48 @@ export default function App() {
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="w-[400px] bg-brand-paper border-l border-brand-border flex flex-col z-20 shadow-2xl"
           >
-            <div className="p-8 border-b border-brand-border">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-[10px] uppercase tracking-[0.25em] font-black text-brand-black/30">Muse Engine</h2>
+            <div className="p-6 border-b border-brand-border">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[10px] uppercase tracking-[0.25em] font-black text-brand-black/30">Divergence Engine</h2>
                 <button onClick={() => setStage('cloister')} className="p-1 hover:bg-brand-black/5 rounded text-brand-black/40">
                   <X size={16} />
-                </button>
-              </div>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && performAISearch()}
-                  placeholder={state.activeTab === 'search' ? "Ask for assets..." : "Prompt for inspiration..."} 
-                  className="w-full bg-brand-paper border-none rounded-xl px-4 py-4 text-sm focus:ring-1 focus:ring-brand-black outline-none tracking-tight shadow-inner" 
-                />
-                <button 
-                  onClick={performAISearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-brand-black text-white rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all"
-                >
-                  <ArrowRight size={14} />
                 </button>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 transparent-scrollbar">
-              <DivergenceCards />
+              <DivergenceCards 
+                editorContent={state.content}
+                onGenerate={async (prompt: string) => {
+                  if (!aiServiceRef.current) return 'AI service not available';
+                  
+                  const systemPrompt = `You are MuseRock's Divergence Engine. Your task is to generate contrasting, thought-provoking creative ideas.
+
+Return your response as a JSON array of idea cards with this format:
+[
+  {
+    "content": "The main idea or suggestion (1-3 sentences)",
+    "category": "one of: character, conflict, symbolic, structural, worldview",
+    "rationale": "Why this is a compelling divergent idea (brief explanation)"
+  },
+  {
+    "content": "Another contrasting idea",
+    "category": "different_category",
+    "rationale": "Explanation..."
+  }
+]
+
+Generate 3-5 diverse, high-quality idea cards. Make them genuinely contrasting, not just variations on the same theme.`;
+                  
+                  const result = await aiServiceRef.current.generateContent(
+                    prompt || `Generate divergent creative ideas based on this writing context:\n\n${state.content}`,
+                    systemPrompt,
+                    { temperature: 0.85 }
+                  );
+                  return result.content;
+                }}
+                isLoading={isAiLoading}
+              />
             </div>
 
             <div className="p-6 bg-brand-black text-white">

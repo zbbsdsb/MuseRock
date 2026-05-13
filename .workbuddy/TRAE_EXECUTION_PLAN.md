@@ -1314,6 +1314,637 @@ B-1 (2h) → B-2 (1.5h) → B-3 (1h) → B-4 (1h) → B-5 (1.5h) → B-6 (1h)
 - ❌ PostgreSQL/pgvector 持久化
 - ❌ Incubation / Convergence / Integration 阶段（v0.2）
 - ❌ App.tsx 拆分重构
-- ❌ Landing Page / GitHub Pages（Phase C）
 - ❌ README 重写（Phase C）
-- ❌ AI prompt engineering（让 AI 返回结构化 JSON idea cards — 后续优化）
+
+---
+
+# Phase C：Landing Page + GitHub Pages 部署 + DivergenceCards 修复
+
+> **Created**: 2026-05-13 12:16
+> **Prerequisite**: Phase B 全部完成（B-1 ～ B-5 ✅）
+> **预估时间**: ~5h
+> **核心目标**: 项目能被外部访问（GitHub Pages），有一个有说服力的 Landing Page
+
+---
+
+## 审计发现的 Bug（先修）
+
+在开始 Landing Page 之前，先修以下 3 个已知问题：
+
+### 预处理 C-0：修复 DivergenceCards 暗色主题硬编码
+
+**文件**: `apps/web/src/components/stages/DivergenceCards.tsx`
+
+**问题**: `getCategoryColor` 函数返回硬编码浅色背景（暗色主题下露白）：
+```typescript
+// 当前错误代码
+character: 'border-amber-400 bg-amber-50',
+conflict: 'border-red-400 bg-red-50',
+symbolic: 'border-purple-400 bg-purple-50',
+structural: 'border-blue-400 bg-blue-50',
+worldview: 'border-green-400 bg-green-50',
+// 以及 fallback: 'border-gray-400 bg-gray-50'
+```
+
+**修复方案**：改为透明背景 + 带透明度的颜色边框，保持 token 兼容：
+```typescript
+const getCategoryColor = (category: string) => {
+  const colors: Record<string, string> = {
+    character: 'border-amber-400/60 bg-amber-400/5',
+    conflict:  'border-red-400/60 bg-red-400/5',
+    symbolic:  'border-purple-400/60 bg-purple-400/5',
+    structural:'border-blue-400/60 bg-blue-400/5',
+    worldview: 'border-green-400/60 bg-green-400/5',
+  };
+  return colors[category] || 'border-brand-border bg-brand-paper/50';
+};
+```
+
+**同时修复**: L537 的废弃逻辑（在 App.tsx 中）：
+```tsx
+// 找到这行：
+placeholder={state.activeTab === 'search' ? "Ask for assets..." : "Prompt for inspiration..."}
+
+// 改为：
+placeholder="Prompt for divergent ideas..."
+```
+
+**提交**: `fix(ui): fix DivergenceCards dark mode colors and stale activeTab ref`
+
+---
+
+## Task C-1：创建 Landing Page 🔴
+
+**目标**: 创建 `apps/web/src/pages/LandingPage.tsx`，实现完整的对外展示页。
+
+**核心原则**:
+- 只用语义化 token（`bg-brand-paper`, `text-brand-black` 等），支持暗/亮主题
+- 不引入任何新的依赖
+- Hash Router: `/` = Landing, `/#/app` = 主应用
+
+### 步骤 1：安装 react-router-dom（如未安装）
+
+```bash
+cd apps/web && npm list react-router-dom 2>/dev/null || npm install react-router-dom
+```
+
+### 步骤 2：修改 main.tsx 支持路由
+
+**文件**: `apps/web/src/main.tsx`
+
+```typescript
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { HashRouter, Routes, Route } from 'react-router-dom';
+import App from './App';
+import LandingPage from './pages/LandingPage';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <HashRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/app" element={<App />} />
+        <Route path="/app/*" element={<App />} />
+      </Routes>
+    </HashRouter>
+  </React.StrictMode>
+);
+```
+
+### 步骤 3：创建 LandingPage 组件
+
+**文件**: `apps/web/src/pages/LandingPage.tsx`
+
+完整实现如下：
+
+```typescript
+import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
+import { PenTool, Sparkles, Compass, BookOpen, Github, Moon, Sun } from 'lucide-react';
+import { useThemeStore } from '../stores/themeStore';
+import logo from '../assets/logo.png';
+
+const STAGES = [
+  {
+    icon: Compass,
+    label: 'Prime',
+    description: 'Set your creative intent, constraints, and references before you begin.',
+  },
+  {
+    icon: PenTool,
+    label: 'The Cloister',
+    description: 'Deep, distraction-free writing. AI stays silent until you need it.',
+  },
+  {
+    icon: Sparkles,
+    label: 'Divergence',
+    description: 'Explore contrasting directions. AI generates idea cards, not generic suggestions.',
+  },
+  {
+    icon: BookOpen,
+    label: 'Reflection',
+    description: 'Close your session with intention. Log what progressed, what was abandoned.',
+  },
+];
+
+const FEATURES = [
+  {
+    title: 'Local-first, Cloud-optional',
+    description: 'Your writing never leaves your device unless you choose. API keys are AES-256 encrypted when stored in the cloud.',
+  },
+  {
+    title: 'Multi-provider AI',
+    description: 'Works with Gemini, OpenAI, and Anthropic. Bring your own key, or connect via our secure proxy.',
+  },
+  {
+    title: 'Export Anywhere',
+    description: 'Export to Markdown, Word (.docx), or PDF. Your work, your format.',
+  },
+  {
+    title: 'Open Source',
+    description: 'GPL-3.0 licensed. Inspect the code, fork it, run it yourself.',
+  },
+];
+
+export default function LandingPage() {
+  const navigate = useNavigate();
+  const { theme, setTheme } = useThemeStore();
+
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+  return (
+    <div className="min-h-screen bg-brand-paper text-brand-black font-sans">
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-5 border-b border-brand-border bg-brand-paper/80 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <img src={logo} alt="MuseRock" className="w-7 h-7 rounded-lg object-cover" />
+          <span className="text-sm font-black tracking-[0.1em] uppercase">MuseRock</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            className="p-2 hover:bg-brand-black/5 rounded-full transition-colors"
+            aria-label="Toggle theme"
+          >
+            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+          <a
+            href="https://github.com/zbbsdsb/muserock"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 hover:bg-brand-black/5 rounded-full transition-colors"
+            aria-label="GitHub"
+          >
+            <Github size={18} />
+          </a>
+          <button
+            onClick={() => navigate('/app')}
+            className="px-5 py-2.5 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all"
+          >
+            Open App
+          </button>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="pt-32 pb-24 px-8 max-w-5xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <p className="text-[10px] uppercase tracking-[0.4em] font-black text-brand-black/30 mb-6">
+            AI Creative Collaboration
+          </p>
+          <h1 className="text-5xl lg:text-7xl font-serif italic font-light tracking-tight leading-[1.1] mb-8">
+            Write with intention.
+            <br />
+            <span className="text-brand-black/30">Not with noise.</span>
+          </h1>
+          <p className="text-xl text-brand-black/50 font-serif max-w-2xl leading-relaxed mb-12">
+            MuseRock is a structured creative loop for writers, designers, and researchers.
+            AI assists at the right moments — silent when you need focus, generative when you need divergence.
+          </p>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/app')}
+              className="px-8 py-4 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all shadow-lg"
+            >
+              Start Writing Free
+            </button>
+            <a
+              href="https://github.com/zbbsdsb/muserock"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-4 border border-brand-border rounded-full text-[10px] uppercase tracking-widest font-black hover:border-brand-black transition-all flex items-center gap-2"
+            >
+              <Github size={14} />
+              View on GitHub
+            </a>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* Creative Loop */}
+      <section className="py-24 px-8 border-t border-brand-border">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-[10px] uppercase tracking-[0.4em] font-black text-brand-black/30 mb-4 text-center">
+            The Creative Loop
+          </p>
+          <h2 className="text-3xl lg:text-4xl font-serif italic font-light tracking-tight text-center mb-16">
+            Four stages. One coherent workflow.
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {STAGES.map((stage, i) => (
+              <motion.div
+                key={stage.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="p-6 border border-brand-border rounded-2xl hover:border-brand-black/30 transition-colors bg-brand-paper"
+              >
+                <div className="w-10 h-10 border border-brand-border rounded-full flex items-center justify-center mb-4">
+                  <stage.icon size={18} className="text-brand-black/60" />
+                </div>
+                <h3 className="text-sm font-black uppercase tracking-wider mb-3">{stage.label}</h3>
+                <p className="text-sm text-brand-black/50 font-serif leading-relaxed">{stage.description}</p>
+              </motion.div>
+            ))}
+          </div>
+          {/* Loop connector */}
+          <p className="text-center mt-8 text-[10px] uppercase tracking-[0.3em] text-brand-black/20 font-black">
+            Prime → Cloister → Divergence → Reflection → Prime...
+          </p>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-24 px-8 border-t border-brand-border bg-brand-offwhite">
+        <div className="max-w-5xl mx-auto">
+          <p className="text-[10px] uppercase tracking-[0.4em] font-black text-brand-black/30 mb-4 text-center">
+            Built Different
+          </p>
+          <h2 className="text-3xl lg:text-4xl font-serif italic font-light tracking-tight text-center mb-16">
+            No fluff. No dark patterns.
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {FEATURES.map((feature, i) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, x: i % 2 === 0 ? -20 : 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="flex gap-4"
+              >
+                <div className="w-1 bg-brand-border rounded-full shrink-0" />
+                <div>
+                  <h3 className="text-sm font-black mb-2">{feature.title}</h3>
+                  <p className="text-sm text-brand-black/50 font-serif leading-relaxed">{feature.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-32 px-8 border-t border-brand-border text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+        >
+          <h2 className="text-4xl lg:text-5xl font-serif italic font-light tracking-tight mb-6">
+            Your best work starts here.
+          </h2>
+          <p className="text-brand-black/40 font-serif mb-10 text-lg">
+            Free. Open source. No account required to start.
+          </p>
+          <button
+            onClick={() => navigate('/app')}
+            className="px-10 py-5 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all shadow-xl"
+          >
+            Open MuseRock →
+          </button>
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 px-8 border-t border-brand-border flex items-center justify-between text-[10px] uppercase tracking-widest font-black text-brand-black/30">
+        <span>MuseRock © 2026</span>
+        <div className="flex items-center gap-6">
+          <a href="https://github.com/zbbsdsb/muserock" target="_blank" rel="noopener noreferrer" className="hover:text-brand-black transition-colors">GitHub</a>
+          <span>GPL-3.0</span>
+        </div>
+      </footer>
+    </div>
+  );
+}
+```
+
+**提交**: `feat(landing): add LandingPage with hero, creative loop stages, features, and CTA`
+
+---
+
+## Task C-2：GitHub Pages 部署 Workflow 🔴
+
+**目标**: 创建 `.github/workflows/deploy.yml`，每次 `main` 推送后自动构建并部署到 GitHub Pages。
+
+**文件**: `.github/workflows/deploy.yml`
+
+```yaml
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: cd apps/web && npm install
+
+      - name: Build
+        run: cd apps/web && npm run build
+        env:
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'https://api.muserock.app' }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    name: Deploy
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+```
+
+**同时修改 `apps/web/vite.config.ts`**，添加 `base` 配置使 GitHub Pages 路径正确：
+
+打开 `apps/web/vite.config.ts`，检查是否有 `base` 字段。如果没有，在 `defineConfig({` 内添加：
+
+```typescript
+base: process.env.VITE_BASE_URL || '/',
+```
+
+> **注意**: GitHub Pages 如果部署在 `username.github.io/muserock/` 下需要 `base: '/muserock/'`。
+> 如果使用自定义域名或 `username.github.io`（根域），`base: '/'` 即可。
+> 先用 `'/'` 测试，如果资源 404 再改为 `'/muserock/'`。
+
+**提交**: `ci(deploy): add GitHub Pages deploy workflow`
+
+---
+
+## Task C-3：在 GitHub 仓库设置中启用 Pages
+
+**这是手动操作，Trae 无法直接完成**，提醒用户：
+
+1. 打开 `https://github.com/zbbsdsb/muserock/settings/pages`
+2. **Source**: 选择 `GitHub Actions`（不是 Branch）
+3. 保存
+4. 推送代码后，Actions Tab 会看到 "Deploy to GitHub Pages" workflow 运行
+5. 部署成功后访问 `https://zbbsdsb.github.io/muserock/`
+
+---
+
+## Task C-4：恢复 DivergenceCards AI 生成功能 🟡
+
+**问题**: Trae 把 AI 驱动版本简化成了手动添加卡片，核心功能丢失。
+
+**目标**: 在 DivergenceCards 底部添加 AI 生成按钮，连接现有的 AI 服务。
+
+**文件**: `apps/web/src/components/stages/DivergenceCards.tsx`
+
+在现有组件基础上，做以下改动：
+
+### 步骤 1：接收 AI 生成回调
+
+修改组件签名，接受可选的 AI 调用 prop：
+
+```typescript
+interface DivergenceCardsProps {
+  onAIGenerate?: (content: string) => Promise<string>;
+  editorContent?: string;
+  isLoading?: boolean;
+}
+
+export default function DivergenceCards({
+  onAIGenerate,
+  editorContent = '',
+  isLoading = false,
+}: DivergenceCardsProps) {
+```
+
+### 步骤 2：在底部添加 AI 生成按钮（替换当前 Commit 按钮区域）
+
+替换 L126-141（当前的 footer 区域）为：
+
+```tsx
+<div className="mt-4 pt-4 border-t border-brand-border">
+  <div className="flex items-center justify-between mb-3">
+    <span className="text-[10px] text-brand-black/30">
+      {ideaCards.length} cards · {ideaCards.filter((c) => c.isKept).length} kept
+    </span>
+    <button
+      onClick={() => {
+        ideaCards.forEach(c => removeIdeaCard(c.id));
+      }}
+      className="text-[10px] font-black uppercase tracking-widest text-brand-black/20 hover:text-brand-black/50 transition-colors"
+    >
+      Clear All
+    </button>
+  </div>
+
+  {onAIGenerate && (
+    <button
+      onClick={async () => {
+        if (!editorContent.trim() || isLoading) return;
+        try {
+          const result = await onAIGenerate(editorContent);
+          // Try to parse as JSON array of cards
+          try {
+            const parsed = JSON.parse(result);
+            if (Array.isArray(parsed)) {
+              parsed.forEach((item: any) => {
+                addIdeaCard({
+                  content: item.content ?? item,
+                  category: item.category ?? 'conflict',
+                  rationale: item.rationale ?? '',
+                });
+              });
+              return;
+            }
+          } catch {
+            // Not JSON — add as single card
+          }
+          addIdeaCard({
+            content: result,
+            category: 'conflict',
+            rationale: 'AI-generated',
+          });
+        } catch (err) {
+          console.error('AI generation failed:', err);
+        }
+      }}
+      disabled={isLoading || !editorContent.trim()}
+      className="w-full py-3 bg-brand-black text-white rounded-xl text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all flex items-center justify-center gap-2 disabled:opacity-30"
+    >
+      {isLoading ? (
+        <>
+          <svg className="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path d="M21 12a9 9 0 11-6.219-8.56" />
+          </svg>
+          Generating...
+        </>
+      ) : (
+        <>
+          <Sparkles size={13} />
+          Generate with AI
+        </>
+      )}
+    </button>
+  )}
+</div>
+```
+
+### 步骤 3：在 App.tsx 中传递 AI 回调
+
+找到 L550（`<DivergenceCards />`），修改为：
+
+```tsx
+<DivergenceCards
+  editorContent={state.content}
+  onAIGenerate={async (content) => {
+    const service = createAIService(state);
+    return service.generateInspiration(
+      `Based on this writing, generate 4 divergent creative directions as a JSON array.
+Each item: { "content": "...", "category": "conflict|symbolic|structural|character|worldview", "rationale": "why this differs" }.
+Writing context:\n${content.slice(0, 1000)}`
+    );
+  }}
+  isLoading={state.isLoading}
+/>
+```
+
+**提交**: `feat(divergence): restore AI generation in DivergenceCards with JSON card parsing`
+
+---
+
+## Task C-5：端到端验证 + README 更新 🟡
+
+### 步骤 1：验证构建
+
+```bash
+cd apps/web && npx tsc --noEmit    # 0 errors
+cd apps/web && npm run build       # 构建成功
+cd apps/web && npm run test        # 所有测试通过
+```
+
+### 步骤 2：本地验证路由
+
+```bash
+cd apps/web && npm run preview
+```
+
+打开 `http://localhost:4173/` — 应该看到 Landing Page
+打开 `http://localhost:4173/#/app` — 应该看到主应用
+
+### 步骤 3：更新 README.md
+
+**文件**: `README.md`
+
+在 README 顶部（badge 区域之后）添加：
+
+```markdown
+## Live Demo
+
+> 🌐 **[muserock.app](https://zbbsdsb.github.io/muserock/)** — Try it in your browser
+
+No account required. Bring your own API key (Gemini, OpenAI, or Anthropic) or use Local mode.
+```
+
+**提交**: `docs: update README with live demo link and verify build passes`
+
+---
+
+## 执行顺序
+
+```
+C-0（Bug 修复，15min）
+    ↓
+C-1（Landing Page，2h）
+    ↓
+C-2（Deploy Workflow，20min）
+    ↓
+C-3（手动在 GitHub 设置 Pages，5min）
+    ↓
+C-4（DivergenceCards AI，45min）
+    ↓
+C-5（验证 + README，30min）
+```
+
+**总预估**: ~4h
+
+---
+
+## 完成标准
+
+Phase C 完成后，MuseRock MVP 应满足：
+
+- [ ] `https://zbbsdsb.github.io/muserock/` 可访问，显示 Landing Page
+- [ ] Landing Page 有 "Open App" 按钮，点击进入主应用
+- [ ] 主应用 4 个阶段均可切换
+- [ ] DivergenceCards 有 AI 生成按钮，配置 API Key 后可使用
+- [ ] 暗色主题无白底残留
+- [ ] TypeScript 0 errors，测试全过
+
+---
+
+## 不在本轮做的事
+
+- ❌ PostgreSQL/pgvector 持久化
+- ❌ Incubation / Convergence / Integration 阶段（v0.2）
+- ❌ App.tsx 拆分重构
+- ❌ README 全面重写（仅添加 Live Demo 链接）
+- ❌ Astro 官网（Phase D）
