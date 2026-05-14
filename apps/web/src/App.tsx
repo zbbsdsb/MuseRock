@@ -49,6 +49,11 @@ import PrimeBrief from './components/stages/PrimeBrief';
 import ReflectionPanel from './components/stages/ReflectionPanel';
 import DivergenceCards from './components/stages/DivergenceCards';
 import Landing from './components/Landing';
+import OnboardingTour from './components/OnboardingTour';
+import QuickStartGuide, { TEMPLATES } from './components/QuickStartGuide';
+import AIConfigWizard from './components/AIConfigWizard';
+import KeyboardShortcuts from './components/KeyboardShortcuts';
+import { useCreativeLoopStore } from './stores/creativeLoop.store';
 
 export default function App() {
   const { currentStage, setStage } = useCreativeLoopStore();
@@ -108,6 +113,11 @@ export default function App() {
   const aiServiceRef = useRef<LocalAIService | CloudAIService | null>(null);
   const apiKeyServiceRef = useRef<ReturnType<typeof createApiKeyService> | null>(null);
   const { isDark, toggleTheme } = useThemeStore();
+  const { updatePrimeBrief } = useCreativeLoopStore();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showQuickStart, setShowQuickStart] = useState(false);
+  const [showAIWizard, setShowAIWizard] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currUser) => {
@@ -156,6 +166,30 @@ export default function App() {
 
     handleOAuthCallback();
     checkOasisAuth();
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === '/') {
+        e.preventDefault();
+        setShowShortcuts((prev) => !prev);
+      }
+      if (e.key === '1') setStage('prime');
+      if (e.key === '2') setStage('cloister');
+      if (e.key === '3') setStage('divergence');
+      if (e.key === '4') setStage('reflection');
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const hasCompletedTour = localStorage.getItem('muserock_tour_completed');
+    const hasSkippedTour = localStorage.getItem('muserock_tour_skipped');
+    if (hasCompletedTour || hasSkippedTour) {
+      setShowOnboarding(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -330,6 +364,19 @@ export default function App() {
   const handleStart = () => {
     localStorage.setItem('muserock_visited', 'true');
     setShowLanding(false);
+    const hasCompletedTour = localStorage.getItem('muserock_tour_completed');
+    const hasSkippedTour = localStorage.getItem('muserock_tour_skipped');
+    if (!hasCompletedTour && !hasSkippedTour) {
+      setShowOnboarding(true);
+    } else {
+      const hasCompletedAI = localStorage.getItem('muserock_ai_configured');
+      const hasSkippedAI = localStorage.getItem('muserock_ai_skipped');
+      if (!hasCompletedAI && !hasSkippedAI) {
+        setShowAIWizard(true);
+      } else {
+        setShowQuickStart(true);
+      }
+    }
   };
 
   if (showLanding) {
@@ -717,6 +764,17 @@ Generate 3-5 diverse, high-quality idea cards. Make them genuinely contrasting, 
                 >
                   Confirm Configuration
                 </button>
+                {!localStorage.getItem('muserock_ai_configured') && (
+                  <button
+                    onClick={() => {
+                      toggleSettings();
+                      setShowAIWizard(true);
+                    }}
+                    className="w-full py-3 mt-2 border border-brand-border text-brand-black/50 font-black uppercase tracking-[0.2em] text-[10px] hover:border-brand-black hover:text-brand-black transition-all"
+                  >
+                    Run AI Setup Wizard
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>
@@ -822,6 +880,74 @@ Generate 3-5 diverse, high-quality idea cards. Make them genuinely contrasting, 
         isOpen={isDashboardOpen}
         onClose={() => setIsDashboardOpen(false)}
       />
+
+      <OnboardingTour
+        onComplete={() => {
+          setShowOnboarding(false);
+          const hasCompletedAI = localStorage.getItem('muserock_ai_configured');
+          const hasSkippedAI = localStorage.getItem('muserock_ai_skipped');
+          if (!hasCompletedAI && !hasSkippedAI) {
+            setShowAIWizard(true);
+          } else {
+            setShowQuickStart(true);
+          }
+        }}
+        onSkip={() => {
+          setShowOnboarding(false);
+          const hasCompletedAI = localStorage.getItem('muserock_ai_configured');
+          const hasSkippedAI = localStorage.getItem('muserock_ai_skipped');
+          if (!hasCompletedAI && !hasSkippedAI) {
+            setShowAIWizard(true);
+          } else {
+            setShowQuickStart(true);
+          }
+        }}
+      />
+
+      <AnimatePresence>
+        {showAIWizard && (
+          <AIConfigWizard
+            onComplete={() => {
+              setShowAIWizard(false);
+              setShowQuickStart(true);
+            }}
+            onSkip={() => {
+              setShowAIWizard(false);
+              setShowQuickStart(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showQuickStart && (
+          <QuickStartGuide
+            onSelectTemplate={(template) => {
+              updatePrimeBrief({
+                intent: template.intent,
+                constraints: template.constraints,
+                references: template.references.split(',').map((r) => r.trim()).filter(Boolean),
+              });
+              setShowQuickStart(false);
+              setStage('cloister');
+            }}
+            onStartFromScratch={() => {
+              setShowQuickStart(false);
+              setStage('prime');
+            }}
+            onClose={() => setShowQuickStart(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showShortcuts && (
+          <KeyboardShortcuts
+            isOpen={showShortcuts}
+            onClose={() => setShowShortcuts(false)}
+          />
+        )}
+      </AnimatePresence>
 
       <MuseSphereProvider
         isAiActive={isAiLoading}

@@ -1,12 +1,38 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Plus, X, Link as LinkIcon } from 'lucide-react';
+import { Plus, X, Link as LinkIcon, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { useCreativeLoopStore } from '../../stores/creativeLoop.store';
+
+const EXAMPLES = {
+  intent: "A noir detective story set in a city where memories can be traded like currency. The protagonist discovers that her own childhood memories have been stolen and sold to fund a conspiracy at the highest levels of government.",
+  constraints: [
+    "Keep the tone atmospheric and introspective",
+    "Use first-person narration",
+    "No resolutions in the first scene—let mystery compound",
+    "Aim for 1,500-2,500 words"
+  ],
+  references: [
+    "Blade Runner (film) — memory as identity",
+    "In the Woods There Were Dark Trees (short story) — unreliable memory",
+    "https://en.wikipedia.org/wiki/Noir_fiction"
+  ]
+};
 
 export default function PrimeBrief() {
   const { primeBrief, updatePrimeBrief, setStage } = useCreativeLoopStore();
   const [newConstraint, setNewConstraint] = useState('');
   const [newReference, setNewReference] = useState('');
+  const [showExamples, setShowExamples] = useState({
+    intent: false,
+    constraints: false,
+  });
+
+  const completedFields = {
+    intent: primeBrief.intent.trim().length > 0,
+    constraints: primeBrief.constraints.length > 0,
+    references: true,
+  };
+  const completedCount = Object.values(completedFields).filter(Boolean).length;
 
   const addConstraint = () => {
     if (newConstraint.trim()) {
@@ -30,36 +56,92 @@ export default function PrimeBrief() {
     updatePrimeBrief({ references: primeBrief.references.filter((_, i) => i !== index) });
   };
 
+  const applyExample = (field: 'intent' | 'constraints') => {
+    if (field === 'intent') {
+      updatePrimeBrief({ intent: EXAMPLES.intent });
+    } else if (field === 'constraints') {
+      updatePrimeBrief({ constraints: EXAMPLES.constraints });
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col">
       <div className="mb-12">
-        <p className="text-[10px] uppercase tracking-[0.25em] text-brand-black/30 font-black mb-3 leading-none">
-          Stage: Prime
-        </p>
-        <h1 className="text-4xl lg:text-5xl font-serif italic font-light tracking-tight">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] uppercase tracking-[0.25em] text-brand-black/30 font-black leading-none">
+            Stage: Prime
+          </p>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-brand-black/30 font-black uppercase tracking-widest">
+              {completedCount}/3 Complete
+            </span>
+            <div className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full transition-colors ${
+                    i < completedCount ? 'bg-brand-black' : 'bg-brand-border'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+        <h1 className="text-4xl lg:text-5xl font-serif italic font-light tracking-tight mb-2">
           Define Your Creative Intent
         </h1>
+        <p className="text-sm text-brand-black/40 font-serif italic">
+          Clarify what you want to create. Set boundaries. Gather inspiration.
+        </p>
       </div>
 
       <div className="space-y-12 flex-1">
-        {/* Intent */}
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 block mb-4">
-            What are you trying to create?
-          </label>
+          <div className="flex items-center justify-between mb-4">
+            <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50">
+              What are you trying to create?
+            </label>
+            <button
+              onClick={() => {
+                setShowExamples({ ...showExamples, intent: !showExamples.intent });
+                if (!showExamples.intent) {
+                  applyExample('intent');
+                }
+              }}
+              className="flex items-center gap-1 text-[10px] text-brand-black/30 hover:text-brand-black transition-colors"
+            >
+              <Sparkles size={12} />
+              {showExamples.intent ? 'Hide Example' : 'Show Example'}
+            </button>
+          </div>
           <textarea
             value={primeBrief.intent}
             onChange={(e) => updatePrimeBrief({ intent: e.target.value })}
             placeholder="A noir detective story set in a city where memories can be traded like currency..."
-            className="w-full h-32 bg-transparent text-lg font-serif text-brand-black/90 placeholder-brand-black/10 resize-none outline-none border-b border-brand-border pb-4 focus:border-brand-black transition-colors"
+            className={`w-full h-32 bg-transparent text-lg font-serif text-brand-black/90 placeholder-brand-black/10 resize-none outline-none border-b pb-4 transition-colors ${
+              completedFields.intent ? 'border-brand-black' : 'border-brand-border'
+            }`}
           />
         </div>
 
-        {/* Constraints */}
         <div>
-          <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 block mb-4">
-            Constraints & Boundaries
-          </label>
+          <div className="flex items-center justify-between mb-4">
+            <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50">
+              Constraints & Boundaries
+            </label>
+            <button
+              onClick={() => {
+                setShowExamples({ ...showExamples, constraints: !showExamples.constraints });
+                if (!showExamples.constraints) {
+                  applyExample('constraints');
+                }
+              }}
+              className="flex items-center gap-1 text-[10px] text-brand-black/30 hover:text-brand-black transition-colors"
+            >
+              <Sparkles size={12} />
+              {showExamples.constraints ? 'Hide Example' : 'Show Example'}
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2 mb-3">
             {primeBrief.constraints.map((c, i) => (
               <motion.span
@@ -89,7 +171,6 @@ export default function PrimeBrief() {
           </div>
         </div>
 
-        {/* References */}
         <div>
           <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 block mb-4">
             References & Seeds
@@ -120,13 +201,19 @@ export default function PrimeBrief() {
         </div>
       </div>
 
-      {/* CTA */}
-      <div className="py-8 flex justify-end">
+      <div className="py-8 flex justify-between items-center">
+        <button
+          onClick={() => setStage('reflection')}
+          className="text-sm text-brand-black/30 hover:text-brand-black transition-colors"
+        >
+          Skip to Reflection →
+        </button>
         <button
           onClick={() => setStage('cloister')}
-          className="px-8 py-4 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all shadow-md"
+          className="px-8 py-4 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all shadow-md flex items-center gap-3"
         >
-          Enter The Cloister →
+          Enter The Cloister
+          <ChevronRight size={14} />
         </button>
       </div>
     </div>

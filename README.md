@@ -254,15 +254,18 @@ MuseRock stands on the shoulders of giants:
 
 ---
 
-## 📖 Further Reading
+<p align="center">
+  <strong>🏢 Oasis Company</strong><br>
+  <a href="https://github.com/zbbsdsb">GitHub Organization</a>
+</p>
 
-| Document | Description |
-|----------|-------------|
-| [Deployment Guide](docs/DEPLOYMENT.md) | GitHub Pages deployment and hosting |
-| [API Documentation](docs/API_Documentation.md) | Complete API reference and endpoints |
-| [Technical Architecture](docs/Technical_Architecture.md) | System architecture overview |
-| [Creative Loop Guide](docs/Creative_Loop_Guide.md) | Guide to the 4-stage creative process |
-| [Muse Engine Guide](docs/Muse_Engine_Guide.md) | AI-powered inspiration generation |
+<p align="center">
+  Explore our ecosystem:
+  <a href="https://github.com/zbbsdsb/QueueDesk">QueueDesk</a> ·
+  <a href="https://github.com/zbbsdsb/muserock">MuseRock</a> ·
+  <a href="https://github.com/zbbsdsb/R-U-Socrates">R U Socrates</a> ·
+  <a href="https://github.com/zbbsdsb/pwl-reading-companion">pwl-reading</a>
+</p>
 
 ---
 
