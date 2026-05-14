@@ -1,3 +1,8 @@
+/**
+ * MCP (Model Context Protocol) 完整类型定义
+ * 基于官方协议规范，支持工具、资源和提示
+ */
+
 export interface JsonRpcRequest {
   jsonrpc: '2.0';
   id: string | number;
@@ -35,6 +40,99 @@ export interface User {
   permissions: string[];
   email?: string;
 }
+
+// ============ 工具相关类型 ============
+
+export interface Tool {
+  name: string;
+  description: string;
+  inputSchema: object;
+  annotations?: ToolAnnotations;
+}
+
+export interface ToolAnnotations {
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  idempotentHint?: boolean;
+  openWorldHint?: boolean;
+}
+
+export interface ToolResult {
+  content: ToolContent[];
+  isError?: boolean;
+}
+
+export interface ToolContent {
+  type: 'text' | 'image' | 'audio' | 'resource';
+  text?: string;
+  data?: string;
+  mimeType?: string;
+  resource?: ResourceReference;
+}
+
+export interface ResourceReference {
+  uri: string;
+  name?: string;
+  description?: string;
+}
+
+// ============ 资源相关类型 ============
+
+export interface Resource {
+  uri: string;
+  name: string;
+  description?: string;
+  mimeType?: string;
+  size?: number;
+  annotations?: ResourceAnnotations;
+}
+
+export interface ResourceAnnotations {
+  readOnlyHint?: boolean;
+}
+
+export interface ResourceContents {
+  contents: ResourceContent[];
+}
+
+export interface ResourceContent {
+  uri: string;
+  mimeType?: string;
+  text?: string;
+  blob?: string;
+}
+
+// ============ 提示相关类型 ============
+
+export interface Prompt {
+  name: string;
+  description?: string;
+  arguments?: PromptArgument[];
+}
+
+export interface PromptArgument {
+  name: string;
+  description?: string;
+  required?: boolean;
+}
+
+export interface PromptMessage {
+  role: 'user' | 'assistant';
+  content: PromptContent;
+}
+
+export interface PromptContent {
+  type: 'text' | 'image' | 'audio' | 'resource';
+  text?: string;
+  data?: string;
+  mimeType?: string;
+}
+
+export interface PromptResult {
+  messages: PromptMessage[];
+}
+
+// ============ 项目特定工具参数类型 ============
 
 export interface SearchMemoryParams {
   query: string;
@@ -79,6 +177,20 @@ export interface CreateApprenticeJobResult {
   queueName: string;
   estimatedCompletion: string;
   budgetRemaining: number;
+}
+
+export interface GetApprenticeJobParams {
+  jobId: string;
+}
+
+export interface GetApprenticeJobResult {
+  jobId: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  result?: string;
+  progress?: number;
+  error?: string;
+  createdAt: string;
+  completedAt?: string;
 }
 
 export interface FetchBioAssetParams {
@@ -156,7 +268,7 @@ export interface GetCharacterDetailResult {
 
 export interface GenerateContentParams {
   prompt: string;
-  model?: 'gemini-1.5-pro' | 'claude-3-opus' | 'gpt-4';
+  model?: 'gemini-1.5-pro' | 'gemini-2.0-flash' | 'claude-3-opus' | 'claude-3-5-sonnet' | 'gpt-4o' | 'gpt-4-turbo';
   parameters?: {
     temperature?: number;
     maxTokens?: number;
@@ -215,6 +327,66 @@ export interface PromptTemplate {
   createdAt: string;
   usageCount: number;
 }
+
+// ============ 新增项目管理工具 ============
+
+export interface CreateProjectParams {
+  name: string;
+  description?: string;
+  projectType?: 'novel' | 'script' | 'game' | 'other';
+}
+
+export interface CreateProjectResult {
+  projectId: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+}
+
+export interface GetProjectsParams {
+  limit?: number;
+  offset?: number;
+}
+
+export interface GetProjectsResult {
+  projects: {
+    id: string;
+    name: string;
+    description?: string;
+    type?: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  total: number;
+}
+
+export interface GetProjectParams {
+  projectId: string;
+}
+
+export interface GetProjectResult {
+  id: string;
+  name: string;
+  description?: string;
+  type?: string;
+  content?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateProjectParams {
+  projectId: string;
+  name?: string;
+  description?: string;
+  content?: string;
+}
+
+export interface UpdateProjectResult {
+  success: boolean;
+  projectId: string;
+}
+
+// ============ 审计和限流类型 ============
 
 export interface AuditEvent {
   id: string;

@@ -5,8 +5,11 @@ import { MCPGateway } from './mcp.gateway';
 
 import { HandlerRegistry } from './handlers/handler.registry';
 import { MemoryHandler } from './handlers/memory.handler';
-import { ApprenticeHandler } from './handlers/apprentice.handler';
-import { BioHandler } from './handlers/bio.handler';
+import { ApprenticeHandler, GetApprenticeJobHandler } from './handlers/apprentice.handler';
+import { FetchBioAssetHandler } from './handlers/fetch-bio-asset.handler';
+import { SearchBioAssetsHandler } from './handlers/search-bio-assets.handler';
+import { ListCharactersHandler } from './handlers/list-characters.handler';
+import { GetCharacterDetailHandler } from './handlers/get-character-detail.handler';
 import { ContentHandler } from './handlers/content.handler';
 import { PromptHandler } from './handlers/prompt.handler';
 
@@ -45,7 +48,11 @@ import { ObservabilityModule } from '../observability/observability.module';
     HandlerRegistry,
     MemoryHandler,
     ApprenticeHandler,
-    BioHandler,
+    GetApprenticeJobHandler,
+    FetchBioAssetHandler,
+    SearchBioAssetsHandler,
+    ListCharactersHandler,
+    GetCharacterDetailHandler,
     ContentHandler,
     PromptHandler,
     AuditService,

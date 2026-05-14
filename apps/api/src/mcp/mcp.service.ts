@@ -1,8 +1,14 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { HandlerRegistry, MCPHandler } from './handlers/handler.registry';
+import {
+  HandlerRegistry,
+  MCPHandler,
+} from './handlers/handler.registry';
 import { MemoryHandler } from './handlers/memory.handler';
-import { ApprenticeHandler } from './handlers/apprentice.handler';
-import { BioHandler } from './handlers/bio.handler';
+import { ApprenticeHandler, GetApprenticeJobHandler } from './handlers/apprentice.handler';
+import { FetchBioAssetHandler } from './handlers/fetch-bio-asset.handler';
+import { SearchBioAssetsHandler } from './handlers/search-bio-assets.handler';
+import { ListCharactersHandler } from './handlers/list-characters.handler';
+import { GetCharacterDetailHandler } from './handlers/get-character-detail.handler';
 import { ContentHandler } from './handlers/content.handler';
 import { PromptHandler } from './handlers/prompt.handler';
 
@@ -12,7 +18,11 @@ export class McpService implements OnModuleInit {
     private readonly handlerRegistry: HandlerRegistry,
     private readonly memoryHandler: MemoryHandler,
     private readonly apprenticeHandler: ApprenticeHandler,
-    private readonly bioHandler: BioHandler,
+    private readonly getApprenticeJobHandler: GetApprenticeJobHandler,
+    private readonly fetchBioAssetHandler: FetchBioAssetHandler,
+    private readonly searchBioAssetsHandler: SearchBioAssetsHandler,
+    private readonly listCharactersHandler: ListCharactersHandler,
+    private readonly getCharacterDetailHandler: GetCharacterDetailHandler,
     private readonly contentHandler: ContentHandler,
     private readonly promptHandler: PromptHandler,
   ) {}
@@ -21,15 +31,19 @@ export class McpService implements OnModuleInit {
     this.registerHandlers([
       this.memoryHandler,
       this.apprenticeHandler,
-      this.bioHandler,
+      this.getApprenticeJobHandler,
+      this.fetchBioAssetHandler,
+      this.searchBioAssetsHandler,
+      this.listCharactersHandler,
+      this.getCharacterDetailHandler,
       this.contentHandler,
       this.promptHandler,
     ]);
   }
 
   private registerHandlers(handlers: MCPHandler[]) {
-    handlers.forEach(handler => {
-      this.handlerRegistry.register(handler);
+    handlers.forEach((handler) => {
+      this.handlerRegistry.registerToolHandler(handler);
     });
   }
 

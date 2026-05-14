@@ -7,6 +7,9 @@ MuseRock is an AI-powered creative collaboration platform designed for creators 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
+[![Deploy](https://github.com/zbbsdsb/MuseRock/actions/workflows/deploy.yml/badge.svg)](https://github.com/zbbsdsb/MuseRock/deployments)
+
+**Live Demo**: https://zbbsdsb.github.io/MuseRock/
 
 ---
 
@@ -255,6 +258,7 @@ MuseRock stands on the shoulders of giants:
 
 | Document | Description |
 |----------|-------------|
+| [Deployment Guide](docs/DEPLOYMENT.md) | GitHub Pages deployment and hosting |
 | [API Documentation](docs/API_Documentation.md) | Complete API reference and endpoints |
 | [Technical Architecture](docs/Technical_Architecture.md) | System architecture overview |
 | [Creative Loop Guide](docs/Creative_Loop_Guide.md) | Guide to the 4-stage creative process |
