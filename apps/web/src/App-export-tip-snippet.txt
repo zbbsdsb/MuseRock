@@ -1,0 +1,31 @@
+// ================================================
+// App.tsx 需要修改的部分 - 快速参考
+// ================================================
+
+// 1. 在导入部分添加 (大约第60行附近)
+// ------------------------------------------------
+import KeyboardShortcuts from './components/KeyboardShortcuts';
+import SmartTip from './components/SmartTip'; // 新增这一行
+import { useCreativeLoopStore } from './stores/creativeLoop.store';
+
+
+// 2. 在 main 组件中添加 (大约第546行附近，找到 <main> 标签)
+// ------------------------------------------------
+      {/* --- MAIN CREATIVE AREA --- */}
+      <main className="flex-1 flex flex-col p-8 md:p-12 lg:p-16 bg-brand-paper relative overflow-hidden transition-all">
+        {/* 新增：导出前智能提示 */}
+        {isExportMenuOpen && (
+          <SmartTip
+            id="export-consistency-tip"
+            message="Deo可以帮你检查角色一致性！在导出前让AI帮你审查一下你的作品。"
+            assistantName="Deo"
+            position="top-right"
+            delay={500}
+          />
+        )}
+
+
+// 3. 检查并修复变量名（如果需要）
+// ------------------------------------------------
+// 查找 IsExportMenuOpen 并替换为 isExportMenuOpen
+// (确保变量名是小写开头)

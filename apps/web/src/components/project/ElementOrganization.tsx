@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   DndContext,
@@ -20,6 +20,7 @@ import { Plus, Search } from 'lucide-react';
 import type { ProjectElement, ElementType } from '../../types/project';
 import DraggableElement from './DraggableElement';
 import { elementTypeLabels } from './elementIcons';
+import SmartTip from '../SmartTip';
 
 function arrayMove<T>(array: T[], fromIndex: number, toIndex: number): T[] {
   const result = [...array];
@@ -38,6 +39,7 @@ export default function ElementOrganization({ elements, onElementsChange }: Elem
   const [searchQuery, setSearchQuery] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
+  const [hasAddedElements, setHasAddedElements] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -49,6 +51,12 @@ export default function ElementOrganization({ elements, onElementsChange }: Elem
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  useEffect(() => {
+    if (elements.length > 2 && !hasAddedElements) {
+      setHasAddedElements(true);
+    }
+  }, [elements.length, hasAddedElements]);
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -127,8 +135,7 @@ export default function ElementOrganization({ elements, onElementsChange }: Elem
       };
       const newItems = [...items.slice(0, index + 1), newElement.id, ...items.slice(index + 1)];
       setItems(newItems);
-      const newElements = [...elements.slice(0, index + 1), newElement, ...elements.slice(index + 1)];
-      onElementsChange(newElements);
+      onElementsChange([...elements.slice(0, index + 1), newElement, ...elements.slice(index + 1)]);
     }
   };
 
@@ -159,6 +166,16 @@ export default function ElementOrganization({ elements, onElementsChange }: Elem
 
   return (
     <div className="flex flex-col h-full">
+      {hasAddedElements && (
+        <SmartTip
+          id="element-timeline-tip"
+          message="Dia可以帮你构思时代背景！在构建故事世界时，它能提供历史背景、文化元素等丰富的设定建议。"
+          assistantName="Dia"
+          position="bottom-right"
+          delay={1500}
+        />
+      )}
+
       <div className="flex items-center justify-between px-4 py-3 border-b border-brand-border">
         <div className="flex items-center gap-3">
           <h3 className="text-sm font-serif italic text-brand-black">Elements</h3>
@@ -173,7 +190,7 @@ export default function ElementOrganization({ elements, onElementsChange }: Elem
               type="text"
               placeholder="Search elements..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 pr-4 py-2 rounded-xl border border-brand-border bg-brand-paper text-sm text-brand-black placeholder-brand-black/30 focus:outline-none focus:border-violet-500 w-48"
             />
           </div>

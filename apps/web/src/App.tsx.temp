@@ -1,0 +1,75 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import logo from './assets/logo.png';
+import { 
+  PenTool, 
+  Sparkles, 
+  Search, 
+  Settings, 
+  History, 
+  ChevronLeft, 
+  ChevronRight,
+  Github,
+   LogOut,
+  User,
+  X,
+  Keyboard,
+  Loader2,
+  ArrowRight,
+  ShieldCheck,
+  Download,
+  FileText,
+  FileDown,
+  FileImage,
+  Moon,
+  Sun,
+  Compass,
+  BookOpen,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react';
+import { useThemeStore } from './stores/themeStore';
+import { useCreativeLoopStore, STAGE_CONFIG, STAGE_ORDER } from './stores/creativeLoop.store';
+import type { LoopStage } from './stores/creativeLoop.store';
+import ReactMarkdown from 'react-markdown';
+import { MuseRockState, MuseRockMessage, ApiProvider, OasisUser } from './types';
+import { createAIService, createApiKeyService, getAIMode, setAIMode, type AIMode, type LocalAIService, type CloudAIService } from './services/ai-provider';
+import { auth, loginWithGoogle, db } from './lib/firebase';
+import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
+import { doc, getDocFromServer, setDoc, serverTimestamp } from 'firebase/firestore';
+import ContinueWithOasisButton from './components/ContinueWithOasisButton';
+import MuseDashboard from './components/MuseDashboard';
+import MuseSphere from './components/MuseSphere';
+import { MuseSphereProvider } from './providers/MuseSphereProvider';
+import { exportToMarkdown, exportToWord, exportToPDF } from './utils/export';
+import PrimeBrief from './components/stages/PrimeBrief';
+import ReflectionPanel from './components/stages/ReflectionPanel';
+import DivergenceCards from './components/stages/DivergenceCards';
+import Landing from './components/Landing';
+import OnboardingTour from './components/OnboardingTour';
+import QuickStartGuide, { TEMPLATES } from './components/QuickStartGuide';
+import AIConfigWizard from './components/AIConfigWizard';
+import KeyboardShortcuts from './components/KeyboardShortcuts';
+import SmartTip from './components/SmartTip';
+import { useCreativeLoopStore } from './stores/creativeLoop.store';
+
+// ... 其余代码保持原样，只在关键位置添加 SmartTip 组件
+
+// 在 App 组件的 return 部分添加 SmartTip 组件，在导出菜单打开时显示
+// 具体修改在组件中添加：
+// {isExportMenuOpen && (
+//   <SmartTip
+//     id="export-consistency-tip"
+//     message="Deo可以帮你检查角色一致性！在导出前让AI帮你审查一下你的作品。"
+//     assistantName="Deo"
+//     position="top-right"
+//     delay={500}
+//   />
+// )}

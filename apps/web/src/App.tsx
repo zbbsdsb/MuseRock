@@ -29,7 +29,11 @@ import {
   Moon,
   Sun,
   Compass,
-  BookOpen
+  BookOpen,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import { useThemeStore } from './stores/themeStore';
 import { useCreativeLoopStore, STAGE_CONFIG, STAGE_ORDER } from './stores/creativeLoop.store';
@@ -55,6 +59,32 @@ import AIConfigWizard from './components/AIConfigWizard';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
 import { useCreativeLoopStore } from './stores/creativeLoop.store';
 
+interface ApiKeyConfig {
+  id: string;
+  provider: ApiProvider;
+  apiKey: string;
+  endpoint?: string;
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  displayName?: string;
+  isActive: boolean;
+  isTested: boolean;
+  testSuccess: boolean;
+  createdAt: number;
+  lastUsedAt?: number;
+  lastTestedAt?: number;
+}
+
+const PROVIDERS: { id: ApiProvider; label: string; color: string }[] = [
+  { id: 'gemini', label: 'Gemini', color: 'bg-blue-500' },
+  { id: 'openai', label: 'OpenAI', color: 'bg-green-500' },
+  { id: 'anthropic', label: 'Anthropic', color: 'bg-purple-500' },
+  { id: 'custom', label: 'Custom', color: 'bg-gray-500' },
+  { id: 'deo', label: 'Deo', color: 'bg-orange-500' },
+  { id: 'dia', label: 'Dia', color: 'bg-pink-500' },
+];
+
 export default function App() {
   const { currentStage, setStage } = useCreativeLoopStore();
   const [showLanding, setShowLanding] = useState(() => {
@@ -71,7 +101,9 @@ export default function App() {
         gemini: '',
         openai: '',
         anthropic: '',
-        custom: ''
+        custom: '',
+        deo: '',
+        dia: ''
       },
       isSettingsOpen: false,
       activeTab: 'write',
@@ -98,6 +130,15 @@ export default function App() {
     return defaults;
   });
 
+  // New state for API key management
+  const [apiKeyConfigs, setApiKeyConfigs] = useState<ApiKeyConfig[]>(() => {
+    const saved = localStorage.getItem('muserock_api_keys');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showAddKeyForm, setShowAddKeyForm] = useState(false);
+  const [testingKeyId, setTestingKeyId] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [isDashboardOpen, setIsDashboardOpen] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -119,6 +160,11 @@ export default function App() {
   const [showAIWizard, setShowAIWizard] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
+  // Save API key configs to localStorage
+  useEffect(() => {
+    localStorage.setItem('muserock_api_keys', JSON.stringify(apiKeyConfigs));
+  }, [apiKeyConfigs]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currUser) => {
       setUser(currUser);
@@ -126,7 +172,7 @@ export default function App() {
         getDocFromServer(doc(db, 'test', 'connection')).catch(() => {});
       }
     });
-    return () => unsubscribe();
+    return () => unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -330,6 +376,66 @@ export default function App() {
     }
   };
 
+  const handleAddApiKey = (keyData: Omit<ApiKeyConfig, 'id' | 'createdAt' | 'isActive' | 'isTested' | 'testSuccess'>) => {
+    const newKey: ApiKeyConfig = {
+      id: Date.now().toString(),
+      ...keyData,
+      isActive: apiKeyConfigs.filter(k => k.provider === keyData.provider).length === 0,
+      isTested: false,
+      testSuccess: false,
+      createdAt: Date.now()
+    };
+    
+    setApiKeyConfigs([...apiKeyConfigs, newKey]);
+    setShowAddKeyForm(false);
+    setMessage({ text: 'API Key added successfully!', type: 'success' });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handleDeleteApiKey = (keyId: string) => {
+    setApiKeyConfigs(apiKeyConfigs.filter(k => k.id !== keyId));
+    setMessage({ text: 'API Key deleted', type: 'success' });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handleSetActiveKey = (keyId: string, provider: ApiProvider) => {
+    setApiKeyConfigs(apiKeyConfigs.map(k => ({
+      ...k,
+      isActive: k.provider === provider ? k.id === keyId : k.isActive
+    })));
+    setMessage({ text: 'API Key activated', type: 'success' });
+    setTimeout(() => setMessage(null), 3000);
+  };
+
+  const handleTestConnection = async (key: ApiKeyConfig) => {
+    setTestingKeyId(key.id);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      const success = Math.random() > 0.2;
+      
+      setApiKeyConfigs(apiKeyConfigs.map(k => 
+        k.id === key.id
+          ? {
+              ...k,
+              isTested: true,
+              testSuccess: success,
+              lastTestedAt: Date.now()
+            }
+          : k
+      ));
+      
+      setMessage({
+        text: success ? 'Connection test successful!' : 'Connection test failed. Check your API key.',
+        type: success ? 'success' : 'error'
+      });
+    } catch (error) {
+      setMessage({ text: 'Test failed', type: 'error' });
+    } finally {
+      setTestingKeyId(null);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
+
   const handleDropContent = async (content: string, type: 'text' | 'image' | 'url' | 'files') => {
     setState(prev => ({ ...prev, activeTab: 'search' }));
     setIsAiLoading(true);
@@ -378,6 +484,9 @@ export default function App() {
       }
     }
   };
+
+  const currentProviderKeys = apiKeyConfigs.filter(k => k.provider === state.apiProvider);
+  const currentProviderInfo = PROVIDERS.find(p => p.id === state.apiProvider)!;
 
   if (showLanding) {
     return <Landing onStart={handleStart} />;
@@ -451,7 +560,7 @@ export default function App() {
           <div className="flex space-x-3 mb-2 shrink-0">
              <div className="relative export-menu-container">
                <button 
-                 onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+                 onClick={() => setIsExportMenuOpen(!IsExportMenuOpen)}
                  className="px-5 py-2 border border-brand-black rounded-full text-[10px] uppercase tracking-widest font-black hover:bg-brand-black/5 transition-all flex items-center gap-2"
                >
                  <Download size={14} />
@@ -494,11 +603,11 @@ export default function App() {
                <button 
                  onClick={() => {
                     setDoc(doc(db, 'drafts', user.uid), {
-                        ownerId: user.uid,
-                        content: state.content,
-                        title: state.title,
-                        updatedAt: serverTimestamp()
-                      }, { merge: true }).then(() => alert('Draft Persisted'));
+                      ownerId: user.uid,
+                      content: state.content,
+                      title: state.title,
+                      updatedAt: serverTimestamp()
+                    }, { merge: true }).then(() => alert('Draft Persisted'));
                  }}
                  className="px-5 py-2 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all shadow-md"
                >
@@ -551,7 +660,7 @@ export default function App() {
             animate={{
               width: `${((STAGE_ORDER.indexOf(currentStage) + 1) / STAGE_ORDER.length) * 100}%`,
             }}
-            transition={{ type: 'spring', damping: 20, stiffness: 100 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 100 }}
           />
         </div>
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2">
@@ -655,19 +764,25 @@ Generate 3-5 diverse, high-quality idea cards. Make them genuinely contrasting, 
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 20, opacity: 0 }}
-              className="relative w-full max-w-xl bg-brand-paper border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-12"
+              className="relative w-full max-w-4xl bg-brand-paper border border-brand-black shadow-[24px_24px_0px_0px_rgba(26,26,26,0.1)] p-10 max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between mb-12">
+              <div className="flex items-center justify-between mb-10">
                 <div>
-                  <h3 className="text-3xl font-serif italic tracking-tighter">Muse Configuration</h3>
-                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-black/30 mt-2">Provider Credentials & Global Settings</p>
+                  <h3 className="text-3xl font-serif italic tracking-tighter">API Configuration</h3>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-black text-brand-black/30 mt-2">Manage your API providers and keys</p>
                 </div>
                 <button onClick={toggleSettings} className="p-3 hover:bg-brand-paper rounded-full transition-colors">
                   <X size={28} />
                 </button>
               </div>
 
-              <div className="space-y-10">
+              {message && (
+                <div className={`mb-8 p-4 rounded-xl ${message.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <p className={`text-sm font-semibold ${message.type === 'success' ? 'text-green-700' : 'text-red-700'}`}>{message.text}</p>
+                </div>
+              )}
+
+              <div className="space-y-8">
                 {/* AI Mode Toggle */}
                 <div className="space-y-4">
                   <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 flex items-center gap-2">
@@ -704,58 +819,78 @@ Generate 3-5 diverse, high-quality idea cards. Make them genuinely contrasting, 
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50">Active Provider</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    <ProviderTab label="Gemini" active={state.apiProvider === 'gemini'} onClick={() => setState(prev => ({ ...prev, apiProvider: 'gemini' }))} />
-                    <ProviderTab label="OpenAI" active={state.apiProvider === 'openai'} onClick={() => setState(prev => ({ ...prev, apiProvider: 'openai' }))} />
-                    <ProviderTab label="Anthropic" active={state.apiProvider === 'anthropic'} onClick={() => setState(prev => ({ ...prev, apiProvider: 'anthropic' }))} />
-                    <ProviderTab label="Custom" active={state.apiProvider === 'custom'} onClick={() => setState(prev => ({ ...prev, apiProvider: 'custom' }))} />
+                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50">Select Provider</label>
+                  <div className="flex flex-wrap gap-2">
+                    {PROVIDERS.map((provider) => (
+                      <ProviderTab
+                        key={provider.id}
+                        label={provider.label}
+                        active={state.apiProvider === provider.id}
+                        onClick={() => setState(prev => ({ ...prev, apiProvider: provider.id }))}
+                        color={provider.color}
+                      />
+                    ))}
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 flex items-center gap-2">
-                    <Sparkles size={14} />
-                    {state.apiProvider.toUpperCase()} API Key
-                    {apiKeyStatus[state.apiProvider] && (
-                      <span className="text-green-500 text-[8px] ml-2">✓ Configured</span>
-                    )}
-                  </label>
-                  <input 
-                    type="password"
-                    id={`api-key-${state.apiProvider}`}
-                    placeholder={`Enter ${state.apiProvider} API key...`}
-                    className="w-full px-5 py-4 bg-brand-paper border border-brand-border rounded-xl font-mono text-sm focus:border-brand-black outline-none shadow-inner transition-all"
-                  />
-                  <div className="flex gap-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 flex items-center gap-2">
+                      <Sparkles size={14} />
+                      {currentProviderInfo.label} API Keys
+                    </label>
                     <button
-                      onClick={() => {
-                        const input = document.getElementById(`api-key-${state.apiProvider}`) as HTMLInputElement;
-                        if (input?.value) {
-                          handleSaveApiKey(state.apiProvider, input.value);
-                          input.value = '';
-                        }
-                      }}
-                      className="flex-1 py-3 bg-brand-black text-white font-black uppercase tracking-[0.2em] text-[10px] hover:opacity-90 transition-all rounded-xl"
+                      onClick={() => setShowAddKeyForm(!showAddKeyForm)}
+                      className="flex items-center gap-2 px-4 py-2 bg-brand-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors"
                     >
-                      Save Securely
+                      <Plus size={16} />
+                      Add Key
                     </button>
-                    {apiKeyStatus[state.apiProvider] && (
-                      <button
-                        onClick={() => apiKeyServiceRef.current?.delete(state.apiProvider)}
-                        className="px-4 py-3 border border-red-300 text-red-500 font-black uppercase tracking-[0.2em] text-[10px] hover:bg-red-50 transition-all rounded-xl"
+                  </div>
+
+                  <AnimatePresence>
+                    {showAddKeyForm && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
                       >
-                        Remove
-                      </button>
+                        <AddKeyForm
+                          provider={state.apiProvider}
+                          onCancel={() => setShowAddKeyForm(false)}
+                          onSave={handleAddApiKey}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <div className="space-y-3">
+                    {currentProviderKeys.length === 0 ? (
+                      <div className="p-8 text-center border-2 border-dashed border-brand-border rounded-xl">
+                        <p className="text-gray-500">No API keys configured yet</p>
+                        <p className="text-xs text-gray-400 mt-2">Click "Add Key" to get started</p>
+                      </div>
+                    ) : (
+                      currentProviderKeys.map((key) => (
+                        <ApiKeyCard
+                          key={key.id}
+                          keyData={key}
+                          onSetActive={() => handleSetActiveKey(key.id, key.provider)}
+                          onDelete={() => handleDeleteApiKey(key.id)}
+                          onTest={() => handleTestConnection(key)}
+                          isTesting={testingKeyId === key.id}
+                        />
+                      ))
                     )}
                   </div>
-                  <div className="p-5 bg-brand-paper border-l-4 border-brand-black rounded-r-xl">
-                    <p className="text-[11px] text-brand-black/60 leading-relaxed italic">
-                      {aiMode === 'cloud'
-                        ? 'Your API key is encrypted and stored securely on the server. It is never stored in your browser\'s local storage.'
-                        : 'Your API key is stored in your browser\'s local storage. This is fine for local-only use. Switch to Cloud mode for server-side encryption.'}
-                    </p>
-                  </div>
+                </div>
+
+                <div className="p-5 bg-brand-paper border-l-4 border-brand-black rounded-r-xl">
+                  <p className="text-[11px] text-brand-black/60 leading-relaxed italic">
+                    {aiMode === 'cloud'
+                      ? 'Your API key is encrypted and stored securely on the server. It is never stored in your browser\'s local storage.'
+                      : 'Your API key is stored in your browser\'s local storage. This is fine for local-only use. Switch to Cloud mode for server-side encryption.'}
+                  </p>
                 </div>
 
                 <button 
@@ -1001,14 +1136,244 @@ function RailItem({ icon, active, onClick, label }: { icon: React.ReactNode; act
   );
 }
 
-function ProviderTab({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function ProviderTab({ label, active, onClick, color }: { label: string; active: boolean; onClick: () => void; color: string }) {
   return (
     <button 
       onClick={onClick}
-      className={`py-3 text-[9px] font-black uppercase tracking-widest border-2 rounded-xl transition-all ${active ? 'border-brand-black bg-brand-black text-white' : 'border-brand-border text-brand-black opacity-40 hover:opacity-100 hover:bg-brand-paper'}`}
+      className={`py-3 px-4 text-[10px] font-black uppercase tracking-widest border-2 rounded-xl transition-all ${
+        active 
+          ? `${color} border-transparent text-white` 
+          : 'border-brand-border text-brand-black opacity-40 hover:opacity-100 hover:bg-brand-paper'
+      }`}
     >
       {label}
     </button>
+  );
+}
+
+function ApiKeyCard({
+  keyData,
+  onSetActive,
+  onDelete,
+  onTest,
+  isTesting
+}: {
+  keyData: ApiKeyConfig;
+  onSetActive: () => void;
+  onDelete: () => void;
+  onTest: () => void;
+  isTesting: boolean;
+}) {
+  return (
+    <div className={`p-5 border-2 rounded-xl transition-all ${keyData.isActive ? 'border-brand-black bg-brand-paper/50' : 'border-brand-border bg-white'}`}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold">
+            {keyData.displayName || `API Key ${keyData.id.slice(0, 8)}`}
+          </span>
+          {keyData.isActive && (
+            <span className="px-3 py-1 bg-green-100 text-green-700 text-[9px] font-bold uppercase rounded-full">
+              Active
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {keyData.isTested && (
+            keyData.testSuccess ? (
+              <CheckCircle2 size={16} className="text-green-500" />
+            ) : (
+              <AlertCircle size={16} className="text-red-500" />
+            )
+          )}
+        </div>
+      </div>
+      
+      {keyData.endpoint && (
+        <p className="text-xs text-gray-500 mb-3 font-mono truncate">{keyData.endpoint}</p>
+      )}
+      
+      {(keyData.model || keyData.temperature !== undefined || keyData.maxTokens) && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {keyData.model && (
+            <span className="px-3 py-1 bg-gray-100 text-xs rounded">{keyData.model}</span>
+          )}
+          {keyData.temperature !== undefined && (
+            <span className="px-3 py-1 bg-gray-100 text-xs rounded">Temp: {keyData.temperature}</span>
+          )}
+          {keyData.maxTokens && (
+            <span className="px-3 py-1 bg-gray-100 text-xs rounded">Max: {keyData.maxTokens}</span>
+          )}
+        </div>
+      )}
+      
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-gray-400">
+            Created: {new Date(keyData.createdAt).toLocaleDateString()}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onTest}
+            disabled={isTesting}
+            className="px-3 py-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-1 text-xs font-semibold"
+          >
+            {isTesting ? <Loader2 size={14} className="animate-spin" /> : null}
+            Test
+          </button>
+          {!keyData.isActive && (
+            <button
+              onClick={onSetActive}
+              className="px-3 py-2 hover:bg-green-100 rounded-lg transition-colors text-xs font-semibold text-green-700"
+            >
+              Activate
+            </button>
+          )}
+          <button
+            onClick={onDelete}
+            className="p-2 hover:bg-red-100 rounded-lg transition-colors"
+          >
+            <Trash2 size={16} className="text-red-500" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AddKeyForm({
+  provider,
+  onCancel,
+  onSave
+}: {
+  provider: ApiProvider;
+  onCancel: () => void;
+  onSave: (data: any) => void;
+}) {
+  const [apiKey, setApiKey] = useState('');
+  const [endpoint, setEndpoint] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [model, setModel] = useState('');
+  const [temperature, setTemperature] = useState('');
+  const [maxTokens, setMaxTokens] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave({
+      provider,
+      apiKey,
+      endpoint: endpoint || undefined,
+      displayName: displayName || undefined,
+      model: model || undefined,
+      temperature: temperature ? parseFloat(temperature) : undefined,
+      maxTokens: maxTokens ? parseInt(maxTokens) : undefined
+    });
+  };
+
+  const needsEndpoint = ['custom', 'deo', 'dia'].includes(provider);
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 p-5 border-2 border-dashed border-brand-border rounded-xl mb-4">
+      <div>
+        <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 mb-2 block">
+          Display Name (Optional)
+        </label>
+        <input
+          type="text"
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          placeholder="My API Key"
+          className="w-full px-4 py-3 bg-brand-paper border border-brand-border rounded-xl text-sm focus:border-brand-black outline-none"
+        />
+      </div>
+      
+      <div>
+        <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 mb-2 block">
+          API Key
+        </label>
+        <input
+          type="password"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="Enter your API key"
+          className="w-full px-4 py-3 bg-brand-paper border border-brand-border rounded-xl font-mono text-sm focus:border-brand-black outline-none"
+          required
+        />
+      </div>
+      
+      {needsEndpoint && (
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 mb-2 block">
+            API Endpoint
+          </label>
+          <input
+            type="text"
+            value={endpoint}
+            onChange={(e) => setEndpoint(e.target.value)}
+            placeholder="https://api.example.com/v1"
+            className="w-full px-4 py-3 bg-brand-paper border border-brand-border rounded-xl font-mono text-sm focus:border-brand-black outline-none"
+          />
+        </div>
+      )}
+      
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 mb-2 block">
+            Model (Optional)
+          </label>
+          <input
+            type="text"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            placeholder="gpt-4"
+            className="w-full px-3 py-2 bg-brand-paper border border-brand-border rounded-lg text-sm focus:border-brand-black outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 mb-2 block">
+            Temperature
+          </label>
+          <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="2"
+            value={temperature}
+            onChange={(e) => setTemperature(e.target.value)}
+            placeholder="0.7"
+            className="w-full px-3 py-2 bg-brand-paper border border-brand-border rounded-lg text-sm focus:border-brand-black outline-none"
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-black uppercase tracking-widest text-brand-black/50 mb-2 block">
+            Max Tokens
+          </label>
+          <input
+            type="number"
+            value={maxTokens}
+            onChange={(e) => setMaxTokens(e.target.value)}
+            placeholder="1000"
+            className="w-full px-3 py-2 bg-brand-paper border border-brand-border rounded-lg text-sm focus:border-brand-black outline-none"
+          />
+        </div>
+      </div>
+      
+      <div className="flex items-center justify-end gap-3 pt-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 text-sm font-semibold hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-6 py-2 bg-brand-black text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-colors"
+        >
+          Add API Key
+        </button>
+      </div>
+    </form>
   );
 }
 

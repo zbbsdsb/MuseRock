@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Plus, X, Link as LinkIcon, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
 import { useCreativeLoopStore } from '../../stores/creativeLoop.store';
+import SmartTip from '../SmartTip';
 
 const EXAMPLES = {
   intent: "A noir detective story set in a city where memories can be traded like currency. The protagonist discovers that her own childhood memories have been stolen and sold to fund a conspiracy at the highest levels of government.",
@@ -26,6 +27,7 @@ export default function PrimeBrief() {
     intent: false,
     constraints: false,
   });
+  const [intentTyped, setIntentTyped] = useState(false);
 
   const completedFields = {
     intent: primeBrief.intent.trim().length > 0,
@@ -33,6 +35,12 @@ export default function PrimeBrief() {
     references: true,
   };
   const completedCount = Object.values(completedFields).filter(Boolean).length;
+
+  useEffect(() => {
+    if (primeBrief.intent.trim().length > 50 && !intentTyped) {
+      setIntentTyped(true);
+    }
+  }, [primeBrief.intent, intentTyped]);
 
   const addConstraint = () => {
     if (newConstraint.trim()) {
@@ -66,6 +74,14 @@ export default function PrimeBrief() {
 
   return (
     <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col">
+      <SmartTip
+        id="prime-character-tip"
+        message="Deo可以帮你完善角色设定！当你准备好创建角色时，它会提供深度的人物塑造建议。"
+        assistantName="Deo"
+        position="bottom-right"
+        delay={2000}
+      />
+
       <div className="mb-12">
         <div className="flex items-center justify-between mb-3">
           <p className="text-[10px] uppercase tracking-[0.25em] text-brand-black/30 font-black leading-none">
@@ -213,7 +229,7 @@ export default function PrimeBrief() {
           className="px-8 py-4 bg-brand-black text-white rounded-full text-[10px] uppercase tracking-widest font-black hover:opacity-90 transition-all shadow-md flex items-center gap-3"
         >
           Enter The Cloister
-          <ChevronRight size={14} />
+          <ChevronDown size={14} />
         </button>
       </div>
     </div>

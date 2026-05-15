@@ -1,4 +1,4 @@
-export type ApiProvider = 'gemini' | 'openai' | 'anthropic' | 'custom';
+export type ApiProvider = 'gemini' | 'openai' | 'anthropic' | 'custom' | 'deo' | 'dia';
 
 export interface OasisUser {
   sub: string;
@@ -24,4 +24,3 @@ export interface MuseRockMessage {
   text: string;
   timestamp: number;
 }
-

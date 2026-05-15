@@ -1,9 +1,17 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 
-export type ApiProvider = 'gemini' | 'openai' | 'anthropic' | 'custom';
+export type ApiProvider = 'gemini' | 'openai' | 'anthropic' | 'custom' | 'deo' | 'dia';
+
+export interface ModelParameters {
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  presencePenalty?: number;
+  frequencyPenalty?: number;
+}
 
 @Entity('api_keys')
-@Index(['userId', 'provider'], { unique: true })
 export class ApiKey {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -13,7 +21,7 @@ export class ApiKey {
 
   @Column({
     type: 'enum',
-    enum: ['gemini', 'openai', 'anthropic', 'custom'],
+    enum: ['gemini', 'openai', 'anthropic', 'custom', 'deo', 'dia'],
   })
   provider: ApiProvider;
 
@@ -23,8 +31,17 @@ export class ApiKey {
   @Column()
   iv: string;
 
-  @Column({ default: true })
+  @Column({ type: 'text', nullable: true })
+  endpoint: string;
+
+  @Column({ type: 'json', nullable: true })
+  modelParameters: ModelParameters;
+
+  @Column({ default: false })
   isActive: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  displayName: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -34,4 +51,13 @@ export class ApiKey {
 
   @Column({ nullable: true })
   lastUsedAt: Date;
+
+  @Column({ nullable: true })
+  lastTestedAt: Date;
+
+  @Column({ default: false })
+  isTested: boolean;
+
+  @Column({ default: false })
+  testSuccess: boolean;
 }
