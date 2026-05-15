@@ -5,7 +5,9 @@ import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
-  const isGitHubPages = env.VITE_GITHUB_PAGES === 'true';
+  
+  // Check both env variable and process.env for GitHub Pages deployment
+  const isGitHubPages = env.VITE_GITHUB_PAGES === 'true' || process.env.VITE_GITHUB_PAGES === 'true';
   
   return {
     plugins: [react(), tailwindcss()],

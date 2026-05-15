@@ -34,6 +34,14 @@ jobs:
       - name: Install web app dependencies
         run: cd apps/web && npm install
 
+      - name: Copy public assets
+        run: |
+          cd apps/web
+          mkdir -p public/docs
+          cp -r ../../docs/* public/docs/
+          cp ../../logo.png public/
+          cp src/assets/logo.png public/ 2>/dev/null || true
+
       - name: Run TypeScript type check
         run: cd apps/web && npm run typecheck
 
@@ -41,6 +49,14 @@ jobs:
         run: cd apps/web && npm run build
         env:
           VITE_GITHUB_PAGES: 'true'
+
+      - name: Verify build output
+        run: |
+          echo "=== Build Output ==="
+          ls -la apps/web/dist/
+          echo ""
+          echo "=== Checking index.html ==="
+          cat apps/web/dist/index.html | head -20
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
