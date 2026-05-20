@@ -1,13 +1,13 @@
 {
   "name": "muserock",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
     "dev": "cd apps/web && npm run dev",
     "build": "npm run build:web",
     "preview": "cd apps/web && npm run preview",
-    "clean": "rm -rf apps/web/dist",
+    "clean": "rm -rf apps/web/dist muserock-*.zip",
     "lint": "cd apps/web && npm run lint",
     "typecheck": "cd apps/web && npm run typecheck",
     "test": "cd apps/web && npm run test",
@@ -16,7 +16,10 @@
     "build:web": "cd apps/web && npm run build",
     "build:api": "cd apps/api && npm run build",
     "dev:api": "cd apps/api && npm run dev",
-    "install:all": "npm install && cd apps/api && npm install && cd ../web && npm install"
+    "install:all": "npm install && cd apps/api && npm install && cd ../web && npm install",
+    "release:build": "npm run typecheck && npm run build",
+    "release:package": "node scripts/package-release.js",
+    "release": "npm run release:build && npm run release:package"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

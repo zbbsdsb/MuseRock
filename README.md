@@ -2,6 +2,8 @@
 
 > **Creators don't need tools. They need fire.**
 
+![Social Preview](social-preview.png)
+
 MuseRock is an AI-powered creative collaboration platform designed for creators who demand more than ordinary writing tools. It combines distraction-free writing environments, intelligent inspiration engines, and asset sourcing capabilities to help you forge exceptional work.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
