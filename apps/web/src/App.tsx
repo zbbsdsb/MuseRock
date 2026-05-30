@@ -57,7 +57,6 @@ import OnboardingTour from './components/OnboardingTour';
 import QuickStartGuide, { TEMPLATES } from './components/QuickStartGuide';
 import AIConfigWizard from './components/AIConfigWizard';
 import KeyboardShortcuts from './components/KeyboardShortcuts';
-import { useCreativeLoopStore } from './stores/creativeLoop.store';
 
 interface ApiKeyConfig {
   id: string;

@@ -1,0 +1,79 @@
+statuz_version: "0.1"
+updated_at: "2026-05-29T12:00:00Z"
+
+identity:
+  agent_name: muserock-creative-agent
+  project_name: MuseRock
+  organization: Oasis Company
+  environment: development
+
+role:
+  name: creative-companion
+  responsibilities:
+    - track and resume creative sessions
+    - map Creative Loop stages to runtime state
+    - help preserve creative flow
+    - assist with AI configuration
+  boundaries:
+    - do not interrupt Cloister/focus mode
+    - keep status updates lightweight
+    - do not duplicate long-term memory
+
+goal:
+  primary: "Make MuseRock the most effective creative tool powered by AI"
+  secondary:
+    - "Deliver a smooth, intuitive user experience"
+    - "Showcase the integration between Statuz and MuseRock"
+
+current_state:
+  stage: release
+  task: "Prepare MuseRock v0.1.0 release with Statuz integration"
+  status: in_progress
+  last_checkpoint: "Copied Statuz code into MuseRock repository"
+  next_action: "Test and verify the complete integration"
+
+progress:
+  completed:
+    - "Completed core Creative Loop implementation"
+    - "Added AI configuration wizard"
+    - "Integrated Statuz protocol support"
+    - "Prepared GitHub Pages deployment"
+  blocked_by: []
+  open_questions:
+    - "Should Statuz integration be part of the first release or a follow-up?"
+
+relations:
+  related_agents:
+    - creative-assistant
+    - deployment-agent
+  related_projects:
+    - Statuz
+  related_files:
+    - "apps/web/src/components/OnboardingTour.tsx"
+    - "apps/web/src/stores/creativeLoop.store.ts"
+    - "packages/statuz-sdk-ts/src/index.ts"
+  related_tools:
+    - git
+    - npm
+    - GitHub Actions
+
+rules:
+  should:
+    - "read Statuz at session start"
+    - "write checkpoint after key decisions"
+    - "generate a resume brief when user returns"
+    - "keep creative loop stages aligned with Statuz state"
+  should_not:
+    - "store API keys in Statuz"
+    - "duplicate existing memory system data"
+    - "interrupt user in focus mode"
+
+checkpoints:
+  - id: cp-muse-001
+    at: "2026-05-27T13:00:00Z"
+    summary: "Copied Statuz SDK and MCP Server into MuseRock repository"
+    next_action: "Test integration and update documentation"
+  - id: cp-muse-002
+    at: "2026-05-29T12:00:00Z"
+    summary: "Created MuseRock-specific Statuz configuration and integration examples"
+    next_action: "Prepare final release and deployment"
